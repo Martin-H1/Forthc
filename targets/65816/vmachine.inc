@@ -30,10 +30,18 @@
 .A16
 .I16
 
+; Common constants
+
+; Integer constants (based on C's limits.h)
+INT_MIN         = $8000
+INT_MAX         = $7FFF
+MINUS_ONE       = $FFFF
+UINT_MAX        = $FFFF
+
 ; ---------------------------------------------------------------------------
 ; Stack-pointer initial value (must be even, in zero page)
 ; ---------------------------------------------------------------------------
-PSTACK_INIT = $00FE                 ; empty stack: X starts here
+PSTACK_INIT = $02FF                 ; empty stack: X starts here
 
 ; ---------------------------------------------------------------------------
 ; Conditionally import virtual machine runtime functions.

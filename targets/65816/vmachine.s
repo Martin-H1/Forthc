@@ -497,15 +497,74 @@ IND16   = $10                       ; index register width bit
 
 .export vm_dot
 .proc   vm_dot                      ; ( n -- )  print signed decimal
-        JSR  vm_format_dec
-        JSR  vm_cputs
-        RTS
+        CMP  #0
+        BPL  vm_udot
+        ; Negative: negate value, then print minus sign
+        EOR  #UINT_MAX
+        INC  A
+        PHA
+        LDA  #'-'
+        JSR  platform_putc
+        PLA                         ; fall though to vm_udot
 .endproc
 
+; vm_udot - prints a 16 bit unsigned number to the console.
 .export vm_udot
 .proc   vm_udot                     ; ( u -- )  print unsigned decimal
-        JSR  vm_format_udec
-        JSR  vm_cputs
+        ; Print TOS as unsigned decimal via repeated division
+        ; Digits pushed onto hardware stack in reverse, then printed
+        NUM_MSB = 4             ; Offsets to locals
+        NUM_LSB = 3
+        BCD     = 2
+        BASE    = 1
+
+        PHD                     ; save direct page register
+        PHA                     ; Establish working area
+        LDY  #10                ; Assume 10 until we add base support.
+        PHY                     ; BASE (10 or 16)
+        TSC                     ; Xfer RSP to direct page reg
+        TCD                     ; stack local space is now direct page.
+
+        OFF16MEM                ; Switch to byte mode.
+
+        LDA  #0                 ; null delimiter for print loop
+        PHA
+@while:                         ; divide TOS by base
+        STZ  BCD                ; clr BCD
+        LDY  #16                ; {>} = loop counter
+@foreachbit:
+        ASL  NUM_LSB            ; TOS is gradually replaced
+        ROL  NUM_MSB            ; with the quotient
+        ROL  BCD                ; BCD result is gradually replaced
+        LDA  BCD                ; with the remainder
+        SEC
+        SBC  BASE               ; partial BCD >= base ?
+        BCC  @else
+        STA  BCD                ; yes: update the partial result
+        INC  NUM_LSB            ; set low bit in partial quotient
+@else:
+        DEY
+        BNE  @foreachbit        ; loop 16 times
+        LDA  BCD
+        CMP  #10
+        BCC  @decdigit
+        ADC  #6                 ; 'A'-10-1+carry
+@decdigit:
+        ADC  #'0'               ; convert BCD result to ASCII
+        PHA                     ; stack digits in ascending
+        LDA  NUM_LSB            ; order ('0' for zero)
+        ORA  NUM_MSB
+        BNE  @while             ; } until TOS is 0
+@print:
+        PLA
+@loop:
+        JSR  platform_putc      ; print digits in descending order
+        PLA                     ; until null delimiter is encountered
+        BNE  @loop
+        ON16MEM                 ; exit byte mode
+        PLY                     ; clean up working area
+        PLA
+        PLD
         RTS
 .endproc
 
@@ -627,17 +686,6 @@ IND16   = $10                       ; index register width bit
 @done:
         LDX  vm_sp_shadow
         RTS
-.endproc
-
-; ---------------------------------------------------------------------------
-; Number formatting stubs (replace with full implementations)
-; ---------------------------------------------------------------------------
-.proc   vm_format_dec
-        RTS                         ; TODO
-.endproc
-
-.proc   vm_format_udec
-        RTS                         ; TODO
 .endproc
 
 ; ---------------------------------------------------------------------------

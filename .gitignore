@@ -4,3 +4,21 @@ __pycache__/
 dist/
 build/
 .eggs/
+
+# Emacs temporary files
+*~
+
+# Object files
+*.o
+
+# Linker output
+*.map
+
+# Executables
+*.bin
+*.hex
+*.rom
+*.srec
+
+# Debug files
+*.lst
