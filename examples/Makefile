@@ -18,6 +18,9 @@ bin/debug/basic.bin: obj/debug/vmachine.o obj/debug/basic.o
 bin/debug/output.bin: obj/debug/vmachine.o obj/debug/output.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/output.bin -m bin/debug/output.map $^
 
+bin/debug/math.bin: obj/debug/vmachine.o obj/debug/math.o
+	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/math.bin -m bin/debug/math.map $^
+
 bin/debug/memory.bin: obj/debug/vmachine.o obj/debug/memory.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/memory.bin -m bin/debug/memory.map $^
 

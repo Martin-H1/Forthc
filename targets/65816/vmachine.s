@@ -497,15 +497,15 @@ IND16   = $10                       ; index register width bit
 
 .export vm_dot
 .proc   vm_dot                      ; ( n -- )  print signed decimal
+        LDA  0,X
         CMP  #0
         BPL  vm_udot
         ; Negative: negate value, then print minus sign
         EOR  #UINT_MAX
         INC  A
-        PHA
+        STA  0,X
         LDA  #'-'
         JSR  platform_putc
-        PLA                         ; fall though to vm_udot
 .endproc
 
 ; vm_udot - prints a 16 bit unsigned number to the console.
@@ -519,7 +519,7 @@ IND16   = $10                       ; index register width bit
         BASE    = 1
 
         PHD                     ; save direct page register
-        PHA                     ; Establish working area
+        TOR                     ; Establish working area
         LDY  #10                ; Assume 10 until we add base support.
         PHY                     ; BASE (10 or 16)
         TSC                     ; Xfer RSP to direct page reg
@@ -565,6 +565,49 @@ IND16   = $10                       ; index register width bit
         PLY                     ; clean up working area
         PLA
         PLD
+        RTS
+.endproc
+
+.export vm_dots
+.proc   vm_dots                 ; prints parameter stack contents.
+        PHX                     ; Save PSP
+        JSR  calc_depth
+        BEQ  @ds_done           ; no items on stack, we're done.
+        DEX
+        DEX
+        STA  0,X
+        LDA  #'<'               ; print "<depth> "
+        JSR  platform_putc
+        JSR  vm_dot
+        LDA  #'>'
+        JSR  platform_putc
+        LDA  #' '
+        JSR  platform_putc
+        LDX  #PSTACK_INIT
+@print_loop:
+        TXA                     ; Print stack items bottom to top.
+        CMP  1,S
+        BEQ  @ds_done
+        DEX
+        DEX
+        JSR  vm_dot
+        DEX
+        DEX
+        LDA  #' '
+        JSR  platform_putc
+        BRA  @print_loop
+@ds_done:
+        PLX                     ; Restore PSP
+        RTS
+
+calc_depth:
+        TXA
+        EOR  #UINT_MAX          ; Two's complement
+        INC  A
+        CLC
+        ADC  #PSTACK_INIT       ; PSP_INIT - result / 2
+        CMP  #INT_MIN           ; if bit 15 is set, carry = 1
+        ROR  A                  ; Divide by 2 (cells)
         RTS
 .endproc
 
@@ -616,11 +659,12 @@ IND16   = $10                       ; index register width bit
         LDA  0,Y                    ; length byte (8-bit)
         REP  #$20
         LDA  0,X
-        INC  A
-        STA  0,X                    ; addr+1 (NOS)
+        INY
+        STY  0,X                    ; addr+1 (NOS)
         DEX
         DEX
-        ; A still holds length zero-extended to 16 bits after REP
+        ; A holds length byte, but junk in high byte.
+        AND  #$00FF                 ; mask off junk.
         STA  0,X                    ; len (TOS)
         RTS
 .endproc
@@ -640,7 +684,7 @@ IND16   = $10                       ; index register width bit
         INX
         INX
         PHA
-
+        DEY                         ; Change count to an index
 @loop:
         CPY  #0
         BMI  @done                  ; loop terminates at -1 to copy 0 byte.
@@ -660,31 +704,31 @@ IND16   = $10                       ; index register width bit
 
 .export vm_fill
 .proc   vm_fill                     ; ( addr u b -- )  fill u bytes with b
-        LDA  0,X                    ; b
+        LOC_DSTPTR = 1
+        LOC_BYTE = 3
+        LDA  0,X                    ; pop fill byte to LOC_BYTE
         INX
         INX
-        STA  vm_tmp1
-        LDA  0,X                    ; u
+        PHA
+        LDY  0,X                    ; pop u (byte count) to Y
         INX
         INX
-        TAY
-        LDA  0,X                    ; addr
+        LDA  0,X                    ; pop addr to LOC_DTSPTR
         INX
         INX
-        STX  vm_sp_shadow
-        TAX
-@loop:
-        CPY  #0
+        PHA
+        TYA                         ; Test for zero count = no-op
         BEQ  @done
-        SEP  #$20
-        LDA  vm_tmp1
-        STA  0,X
-        REP  #$20
-        INX
+        DEY                         ; Change count to an index
+@loop:
+        OFF16MEM
+        LDA  LOC_BYTE,S
+        STA  (LOC_DSTPTR,S),Y
+        ON16MEM
         DEY
-        BRA  @loop
-@done:
-        LDX  vm_sp_shadow
+        BPL  @loop
+@done:  PLA                         ; Drop stack locals
+        PLA
         RTS
 .endproc
 

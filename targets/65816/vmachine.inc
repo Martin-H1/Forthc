@@ -39,9 +39,10 @@ MINUS_ONE       = $FFFF
 UINT_MAX        = $FFFF
 
 ; ---------------------------------------------------------------------------
-; Stack-pointer initial value (must be even, in zero page)
+; VM pointer initial values
 ; ---------------------------------------------------------------------------
 PSTACK_INIT = $02FF                 ; empty stack: X starts here
+HERE_INIT   = $0600                 ; Here starts on page 6.
 
 ; ---------------------------------------------------------------------------
 ; Conditionally import virtual machine runtime functions.
@@ -315,4 +316,6 @@ PSTACK_INIT = $02FF                 ; empty stack: X starts here
 .macro  VM_INIT
         REP  #$30                   ; 16-bit A and X
         LDX  #PSTACK_INIT           ; initialise parameter stack pointer
+        LDA  #HERE_INIT
+        STA  vm_here_ptr
 .endmacro
