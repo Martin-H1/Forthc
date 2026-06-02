@@ -72,6 +72,7 @@ NOS = 2
         .import vm_over
         .import vm_swap
         .import vm_tuck
+        .import vm_pick
         .import vm_rot
         .import vm_mrot
         .import vm_roll

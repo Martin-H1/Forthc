@@ -138,6 +138,7 @@ RUNTIME_CALLS: dict[str, str] = {
     '0<':     'vm_zlt',
     'over':   'vm_over',
     'swap':   'vm_swap',
+    'pick':   'vm_pick',
     'rot':    'vm_rot',
     '-rot':   'vm_mrot',
     'roll':   'vm_roll',

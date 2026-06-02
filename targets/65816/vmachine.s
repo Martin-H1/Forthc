@@ -326,6 +326,19 @@ IND16   = $10                       ; index register width bit
         RTS
 .endproc
 
+PUBLIC	vm_pick                         ; ( xu...x1 x0 u -- xu...x1 x0 xu )
+        STX  vm_scratch0                ; scratch0 = stack base (PSP)
+        LDA  TOS,X                      ; u
+        INC  A                          ; u+1 (skip u itself)
+        ASL  A                          ; * 2 (cell size)
+        CLC
+        ADC  vm_scratch0                ; X + (u+1)*2
+        STA  vm_scratch0
+        LDA  (vm_scratch0)              ; Fetch xu
+        STA  TOS,X                      ; Replace u with xu
+        RTS
+ENDPUBLIC
+
 .export vm_rot
 .proc   vm_rot                      ; ( n1 n2 n3 -- n2 n3 n1 )
         LDA  4,X                    ; n1
