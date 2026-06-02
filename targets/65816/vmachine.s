@@ -65,12 +65,11 @@ IND16   = $10                       ; index register width bit
 ; ---------------------------------------------------------------------------
 .import forth_main
 
-.export MAIN
-.proc   MAIN
+PUBLIC  MAIN
         VM_INIT
         JSR  forth_main
         RTL
-.endproc
+ENDPUBLIC
 
 
 ; ---------------------------------------------------------------------------
@@ -78,8 +77,7 @@ IND16   = $10                       ; index register width bit
 ; ---------------------------------------------------------------------------
 ; 65816 has no multiply instruction; we use a shift-and-add loop.
 ; ---------------------------------------------------------------------------
-.export vm_star
-.proc   vm_star
+PUBLIC  vm_star
         LDA  0,X                    ; multiplicand n2 (TOS)
         INX
         INX
@@ -104,39 +102,36 @@ IND16   = $10                       ; index register width bit
         LDX  vm_sp_shadow           ; restore parameter stack pointer
         STY  0,X                    ; store result at TOS
         RTS
-.endproc
+ENDPUBLIC
 
 ; ---------------------------------------------------------------------------
 ; vm_slash  —  ( n1 n2 -- n3 )   signed 16/16 division
 ; ---------------------------------------------------------------------------
-.export vm_slash
-.proc   vm_slash
+PUBLIC  vm_slash
         JSR  vm_divmod
         INX                         ; discard remainder
         INX
         RTS
-.endproc
+ENDPUBLIC
 
 ; ---------------------------------------------------------------------------
 ; vm_mod  —  ( n1 n2 -- n3 )   modulo
 ; ---------------------------------------------------------------------------
-.export vm_mod
-.proc   vm_mod
+PUBLIC  vm_mod
         JSR  vm_divmod
         LDA  2,X                    ; remainder → TOS
         INX
         INX
         STA  0,X
         RTS
-.endproc
+ENDPUBLIC
 
 ; ---------------------------------------------------------------------------
 ; vm_slashmod  —  ( n1 n2 -- rem quot )
 ; ---------------------------------------------------------------------------
-.export vm_slashmod
-.proc   vm_slashmod
+PUBLIC  vm_slashmod
         JMP  vm_divmod
-.endproc
+ENDPUBLIC
 
 ; ---------------------------------------------------------------------------
 ; vm_divmod  — internal: ( n1 n2 -- rem quot )
@@ -164,51 +159,46 @@ IND16   = $10                       ; index register width bit
         TYA
         STA  0,X                    ; quotient (TOS)
         RTS
-.endproc
+ENDPUBLIC
 
 ; ---------------------------------------------------------------------------
 ; Bitwise operations
 ; ---------------------------------------------------------------------------
-.export vm_and
-.proc   vm_and
+PUBLIC  vm_and
         LDA  2,X
         AND  0,X
         INX
         INX
         STA  0,X
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_or
-.proc   vm_or
+PUBLIC  vm_or
         LDA  2,X
         ORA  0,X
         INX
         INX
         STA  0,X
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_xor
-.proc   vm_xor
+PUBLIC  vm_xor
         LDA  2,X
         EOR  0,X
         INX
         INX
         STA  0,X
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_not
-.proc   vm_not
+PUBLIC  vm_not
         LDA  0,X
         EOR  #$FFFF
         STA  0,X
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_lshift
-.proc   vm_lshift
+PUBLIC  vm_lshift
         LDA  2,X                    ; value
         LDY  0,X                    ; shift count
         INX
@@ -222,10 +212,9 @@ IND16   = $10                       ; index register width bit
 @done:
         STA  0,X
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_rshift
-.proc   vm_rshift
+PUBLIC  vm_rshift
         LDA  2,X
         LDY  0,X
         INX
@@ -239,13 +228,12 @@ IND16   = $10                       ; index register width bit
 @done:
         STA  0,X
         RTS
-.endproc
+ENDPUBLIC
 
 ; ---------------------------------------------------------------------------
 ; Comparison  ( n1 n2 -- flag )
 ; ---------------------------------------------------------------------------
-.export vm_lt
-.proc   vm_lt
+PUBLIC  vm_lt
         LDA  2,X
         CMP  0,X
         INX
@@ -257,10 +245,9 @@ IND16   = $10                       ; index register width bit
 @true:  LDA  #$FFFF
         STA  0,X
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_gt
-.proc   vm_gt
+PUBLIC  vm_gt
         LDA  0,X
         CMP  2,X
         INX
@@ -272,10 +259,9 @@ IND16   = $10                       ; index register width bit
 @true:  LDA  #$FFFF
         STA  0,X
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_zeq
-.proc   vm_zeq
+PUBLIC  vm_zeq
         LDA  0,X
         BNE  @false
         LDA  #$FFFF
@@ -283,10 +269,9 @@ IND16   = $10                       ; index register width bit
         RTS
 @false: STZ  0,X
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_zlt
-.proc   vm_zlt
+PUBLIC  vm_zlt
         LDA  0,X
         BMI  @true
         STZ  0,X
@@ -294,37 +279,34 @@ IND16   = $10                       ; index register width bit
 @true:  LDA  #$FFFF
         STA  0,X
         RTS
-.endproc
+ENDPUBLIC
 
 ; ---------------------------------------------------------------------------
 ; Stack manipulation
 ; ---------------------------------------------------------------------------
-.export vm_over
-.proc   vm_over
+PUBLIC  vm_over
         LDA  2,X
         DEX
         DEX
         STA  0,X
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_tuck
-.proc   vm_tuck
+PUBLIC  vm_tuck
 	DUP				; TOS = b
 	LDA	4,X			; a
 	STA	NOS,X			; NOS = a
 	LDA	TOS,X			; b
 	STA	4,X			; Slot below a = b
-.endproc
+ENDPUBLIC
 
-.export vm_swap
-.proc   vm_swap
+PUBLIC  vm_swap
         LDA  0,X
         LDY  2,X
         STY  0,X
         STA  2,X
         RTS
-.endproc
+ENDPUBLIC
 
 PUBLIC	vm_pick                         ; ( xu...x1 x0 u -- xu...x1 x0 xu )
         STX  vm_scratch0                ; scratch0 = stack base (PSP)
@@ -339,8 +321,7 @@ PUBLIC	vm_pick                         ; ( xu...x1 x0 u -- xu...x1 x0 xu )
         RTS
 ENDPUBLIC
 
-.export vm_rot
-.proc   vm_rot                      ; ( n1 n2 n3 -- n2 n3 n1 )
+PUBLIC  vm_rot
         LDA  4,X                    ; n1
         LDY  2,X                    ; n2
         STY  4,X
@@ -348,7 +329,7 @@ ENDPUBLIC
         STY  2,X
         STA  0,X
         RTS
-.endproc
+ENDPUBLIC
 
 PUBLIC  vm_mrot                     ; ( a b c -- c a b )
         LDY  4,X                    ; a (bottom)
@@ -398,8 +379,7 @@ PUBLIC  vm_roll                     ; ROLL ( xu xu-1 ... x0 u -- xu-1 ... x0 xu)
 ENDPUBLIC
 
 ; vm_stod - sign extend a word to a long.
-.export vm_stod
-.proc   vm_stod
+PUBLIC  vm_stod
         DEX
         DEX
         LDA     NOS,X           ; n
@@ -410,10 +390,9 @@ ENDPUBLIC
 @positive:
         STZ     TOS,X           ; positive -> high cell = 0
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_2dup
-.proc   vm_2dup                     ; ( n1 n2 -- n1 n2 n1 n2 )
+PUBLIC  vm_2dup
         LDA  2,X
         LDY  0,X
         DEX
@@ -423,24 +402,22 @@ ENDPUBLIC
         STA  2,X
         STY  0,X
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_2drop
-.proc   vm_2drop
+PUBLIC  vm_2drop
         INX
         INX
         INX
         INX
         RTS
-.endproc
+ENDPUBLIC
 
 ; ---------------------------------------------------------------------------
 ; DO-LOOP support
 ; vm_do_loop_step: increment top-of-return-stack index, compare to limit.
 ; Pushes $FFFF (done) or $0000 (continue) onto the parameter stack.
 ; ---------------------------------------------------------------------------
-.export vm_do_loop_step
-.proc   vm_do_loop_step
+PUBLIC  vm_do_loop_step
         TSX
         LDA  $0103,X                ; index (hardware stack at $0100+)
         INC  A
@@ -462,13 +439,12 @@ ENDPUBLIC
         STA  0,X
         STX  vm_sp_shadow
         RTS
-.endproc
+ENDPUBLIC
 
 ; ---------------------------------------------------------------------------
 ; I  — ( -- n )  copy loop index to parameter stack
 ; ---------------------------------------------------------------------------
-.export vm_i
-.proc   vm_i
+PUBLIC  vm_i
         TSX
         LDA  $0103,X                ; index from return stack
         LDX  vm_sp_shadow
@@ -477,13 +453,12 @@ ENDPUBLIC
         STA  0,X
         STX  vm_sp_shadow
         RTS
-.endproc
+ENDPUBLIC
 
 ; ---------------------------------------------------------------------------
 ; J  — ( -- n )  outer loop index
 ; ---------------------------------------------------------------------------
-.export vm_j
-.proc   vm_j
+PUBLIC  vm_j
         TSX
         LDA  $0109,X                ; outer index (2 frames deep)
         LDX  vm_sp_shadow
@@ -492,15 +467,14 @@ ENDPUBLIC
         STA  0,X
         STX  vm_sp_shadow
         RTS
-.endproc
+ENDPUBLIC
 
 ; ---------------------------------------------------------------------------
 ; I/O primitives  (platform-specific — stub implementations shown)
 ; Replace platform_putc / platform_getc with real hardware I/O.
 ; ---------------------------------------------------------------------------
 
-.export vm_emit
-.proc   vm_emit                     ; ( c -- )  output character
+PUBLIC  vm_emit
         LDA  0,X
         INX
         INX
@@ -508,10 +482,9 @@ ENDPUBLIC
         JSR  platform_putc
         LDX  vm_sp_shadow
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_key
-.proc   vm_key                      ; ( -- c )  read character
+PUBLIC  vm_key
         STX  vm_sp_shadow
         JSR  platform_getc
         LDX  vm_sp_shadow
@@ -519,10 +492,9 @@ ENDPUBLIC
         DEX
         STA  0,X
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_cputs
-.proc   vm_cputs                    ; ( addr -- )  print null-terminated string
+PUBLIC  vm_cputs
         LDA  0,X
         INX
         INX
@@ -539,10 +511,9 @@ ENDPUBLIC
 @done:
         ON16MEM                     ; restore 16-bit A
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_type
-.proc   vm_type                     ; ( addr u -- )  output u characters
+PUBLIC  vm_type
         LDY  0,X                    ; count
         INX
         INX
@@ -567,24 +538,21 @@ ENDPUBLIC
         PLA                         ; restore addr (discard)
         PLX                         ; restore P-stack pointer
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_cr
-.proc   vm_cr
+PUBLIC  vm_cr
         LDA  #$0D
         JSR  platform_putc
         LDA  #$0A
         JMP  platform_putc
-.endproc
+ENDPUBLIC
 
-.export vm_space
-.proc   vm_space
+PUBLIC  vm_space
         LDA  #$20
         JMP  platform_putc
-.endproc
+ENDPUBLIC
 
-.export vm_spaces
-.proc   vm_spaces                   ; ( n -- )
+PUBLIC  vm_spaces
         LDA  0,X
         INX
         INX
@@ -600,10 +568,9 @@ ENDPUBLIC
         BRA  @loop
 @done:
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_dot
-.proc   vm_dot                      ; ( n -- )  print signed decimal
+PUBLIC  vm_dot
         LDA  0,X
         CMP  #0
         BPL  vm_udot
@@ -613,11 +580,10 @@ ENDPUBLIC
         STA  0,X
         LDA  #'-'
         JSR  platform_putc
-.endproc
+ENDPUBLIC
 
 ; vm_udot - prints a 16 bit unsigned number to the console.
-.export vm_udot
-.proc   vm_udot                     ; ( u -- )  print unsigned decimal
+PUBLIC  vm_udot
         ; Print TOS as unsigned decimal via repeated division
         ; Digits pushed onto hardware stack in reverse, then printed
         NUM_MSB = 4             ; Offsets to locals
@@ -673,10 +639,9 @@ ENDPUBLIC
         PLA
         PLD
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_dots
-.proc   vm_dots                 ; prints parameter stack contents.
+PUBLIC  vm_dots
         PHX                     ; Save PSP
         JSR  calc_depth
         BEQ  @ds_done           ; no items on stack, we're done.
@@ -716,13 +681,12 @@ calc_depth:
         CMP  #INT_MIN           ; if bit 15 is set, carry = 1
         ROR  A                  ; Divide by 2 (cells)
         RTS
-.endproc
+ENDPUBLIC
 
 ; ---------------------------------------------------------------------------
 ; Memory operations
 ; ---------------------------------------------------------------------------
-.export vm_allot
-.proc   vm_allot                    ; ( n -- )  advance HERE by n bytes
+PUBLIC  vm_allot
         LDA  0,X
         INX
         INX
@@ -730,36 +694,32 @@ calc_depth:
         ADC  vm_here_ptr
         STA  vm_here_ptr
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_cells
-.proc   vm_cells                    ; ( n -- n*2 )  multiply by cell size
+PUBLIC  vm_cells
         LDA  0,X
         ASL  A
         STA  0,X
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_cellplus
-.proc   vm_cellplus                 ; ( addr -- addr+2 )
+PUBLIC  vm_cellplus
         LDA  0,X
         INC  A
         INC  A
         STA  0,X
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_here
-.proc   vm_here                     ; ( -- addr )
+PUBLIC  vm_here
         DEX
         DEX
         LDA  vm_here_ptr
         STA  0,X
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_count
-.proc   vm_count                    ; ( addr -- addr+1 len )  counted string
+PUBLIC  vm_count
         LDA  0,X                    ; addr
         TAY
         SEP  #$20
@@ -774,10 +734,9 @@ calc_depth:
         AND  #$00FF                 ; mask off junk.
         STA  0,X                    ; len (TOS)
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_move
-.proc   vm_move                     ; ( src dst u -- )  copy u bytes
+PUBLIC  vm_move
         SRCPTR = 1
         DSTPTR = 3
         LDY  0,X                    ; u
@@ -807,10 +766,9 @@ calc_depth:
         PLA                         ; Drop stack locals
         PLA
         RTS
-.endproc
+ENDPUBLIC
 
-.export vm_fill
-.proc   vm_fill                     ; ( addr u b -- )  fill u bytes with b
+PUBLIC  vm_fill
         LOC_DSTPTR = 1
         LOC_BYTE = 3
         LDA  0,X                    ; pop fill byte to LOC_BYTE
@@ -837,23 +795,17 @@ calc_depth:
 @done:  PLA                         ; Drop stack locals
         PLA
         RTS
-.endproc
+ENDPUBLIC
 
 ; ---------------------------------------------------------------------------
 ; Zero-page / RAM variables used by the runtime
 ; ---------------------------------------------------------------------------
 .segment "ZEROPAGE"
-.export vm_sp_shadow
 vm_sp_shadow:   .res 2              ; shadow of X (P-stack pointer)
-.export vm_here_ptr
 vm_here_ptr:    .res 2              ; HERE pointer for bump allocator
-.export vm_scratch0
 vm_scratch0:    .res 2              ; general purpose scratch
-.export vm_scratch1
 vm_scratch1:    .res 2              ; general purpose scratch
-.export vm_tmp1
 vm_tmp1:        .res 2              ; scratch
-.export vm_tmp2
 vm_tmp2:        .res 2              ; scratch
 
 ; ---------------------------------------------------------------------------
