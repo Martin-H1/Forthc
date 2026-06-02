@@ -55,7 +55,6 @@ IND16   = $10                       ; index register width bit
 ; vm_star  —  ( n1 n2 -- n3 )   16×16 → 16 multiply
 ; ---------------------------------------------------------------------------
 ; 65816 has no multiply instruction; we use a shift-and-add loop.
-; For a production system, replace with a hardware multiply if available.
 ; ---------------------------------------------------------------------------
 .export vm_star
 .proc   vm_star
@@ -65,21 +64,23 @@ IND16   = $10                       ; index register width bit
         STA  vm_tmp1                ; save n2
         LDA  0,X                    ; multiplier n1
         LDY  #0                     ; accumulator
+        STX  vm_sp_shadow
         LDX  #16                    ; 16 bits (loop counter, not stack ptr)
 @loop:
         LSR  A                      ; shift multiplier right
         BCC  @skip
+        PHA
         TYA
         CLC
         ADC  vm_tmp1                ; add multiplicand to accumulator
         TAY
+        PLA
 @skip:
         ASL  vm_tmp1                ; shift multiplicand left
         DEX
         BNE  @loop
         LDX  vm_sp_shadow           ; restore parameter stack pointer
-        TYA
-        STA  0,X                    ; store result at TOS
+        STY  0,X                    ; store result at TOS
         RTS
 .endproc
 
@@ -101,9 +102,9 @@ IND16   = $10                       ; index register width bit
 .proc   vm_mod
         JSR  vm_divmod
         LDA  2,X                    ; remainder → TOS
+        INX
+        INX
         STA  0,X
-        INX
-        INX
         RTS
 .endproc
 

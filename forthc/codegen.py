@@ -53,6 +53,13 @@ from .ast_nodes import (
 # Name mangling
 # ---------------------------------------------------------------------------
 
+def _to_u16(value: int) -> int:
+    """Convert a signed integer to its 16-bit two's complement unsigned form.
+    CA65 does not accept negative constants, so -1 must be emitted as $FFFF."""
+    if value < 0:
+        return value & 0xFFFF
+    return value
+
 _MANGLE_MAP = {
     '-': '_',
     '?': '_q',
@@ -250,7 +257,7 @@ class CodeGenerator:
     def _gen_constant(self, node: ConstantDef):
         sym = _mangle(node.name)
         self._emit(f'; constant {node.name}')
-        self._emit(f'{sym} = {node.value}')
+        self._emit(f'{sym} = ${_to_u16(node.value):04X}')
         self._emit()
         self._constants[node.name] = node.value
 
@@ -303,8 +310,8 @@ class CodeGenerator:
 
     def _gen_stmt(self, node: ASTNode, str_pool: list):
         if isinstance(node, NumberLit):
-            self._emit_instr(f'LIT {node.value}', f'push {node.value}')
-
+            u16 = _to_u16(node.value)
+            self._emit_instr(f'LIT ${u16:04X}', f'push {node.value}')
         elif isinstance(node, StringLit):
             lbl = self._fresh_str_label()
             str_pool.append((lbl, node.text))

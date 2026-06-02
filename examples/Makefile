@@ -7,6 +7,7 @@ all: debug
 debug: obj obj/debug bin bin/debug \
 	bin/debug/basic.bin bin/debug/basic.srec \
 	bin/debug/output.bin bin/debug/output.srec \
+	bin/debug/math.bin bin/debug/math.srec \
 	bin/debug/memory.bin bin/debug/memory.srec
 
 obj/debug/vmachine.o: ../targets/65816/vmachine.s
