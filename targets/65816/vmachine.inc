@@ -292,10 +292,10 @@ NOS = 2
 ; EQ  =  — ( n1 n2 -- flag )   flag = $FFFF if equal, 0 otherwise
 ; ---------------------------------------------------------------------------
 .macro  EQ
-        LDA  2,X                    ; n1
-        CMP  0,X                    ; compare to n2
+        LDA  TOS,X                  ; n2
         INX
         INX
+        CMP  TOS,X                  ; compare to n1
         BEQ  :+
         LDA  #0
         BRA  :++
@@ -304,12 +304,20 @@ NOS = 2
 .endmacro
 
 ; ---------------------------------------------------------------------------
+; BRANCH  — ( -- )  unconditional branch
+; ---------------------------------------------------------------------------
+.macro  BRANCH  addr
+        JMP  addr
+.endmacro
+
+; ---------------------------------------------------------------------------
 ; ZBRANCH  — ( flag -- )  branch if flag = 0
 ; ---------------------------------------------------------------------------
 .macro  ZBRANCH  addr
-        LDA  0,X
+        LDA  TOS,X
         INX
         INX
+        CMP  #0
         BEQ  addr
 .endmacro
 
