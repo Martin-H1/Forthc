@@ -1,6 +1,5 @@
 \ examples/basic.f
 
-.origin $4000
 .main main
 
 15 constant foo

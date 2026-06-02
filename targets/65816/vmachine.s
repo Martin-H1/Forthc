@@ -286,6 +286,15 @@ IND16   = $10                       ; index register width bit
         RTS
 .endproc
 
+.export vm_tuck
+.proc   vm_tuck
+	DUP				; TOS = b
+	LDA	4,X			; a
+	STA	NOS,X			; NOS = a
+	LDA	TOS,X			; b
+	STA	4,X			; Slot below a = b
+.endproc
+
 .export vm_swap
 .proc   vm_swap
         LDA  0,X
@@ -303,6 +312,21 @@ IND16   = $10                       ; index register width bit
         LDY  0,X                    ; n3
         STY  2,X
         STA  0,X
+        RTS
+.endproc
+
+; vm_stod - sign extend a word to a long.
+.export vm_stod
+.proc   vm_stod
+        DEX
+        DEX
+        LDA     NOS,X           ; n
+        BPL     @positive
+        LDA     #MINUS_ONE      ; negative -> high cell = -1
+        STA     TOS,X
+        RTS
+@positive:
+        STZ     TOS,X           ; positive -> high cell = 0
         RTS
 .endproc
 

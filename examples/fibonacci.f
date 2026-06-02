@@ -1,7 +1,7 @@
 \ Example Forth program: fibonacci and string output
 \ Demonstrates constants, word definitions, if/then, begin/until
 
-.origin $8000
+.main print-fibs
 
 15 constant max-fib
 
@@ -9,13 +9,6 @@
 : greet
     ." Hello from forthc!"
     cr
-;
-
-\ Absolute value
-: abs   ( n -- |n| )
-    dup 0< if
-        0 swap -
-    then
 ;
 
 \ Fibonacci — iterative version
@@ -52,13 +45,4 @@
         dup max-fib >
     until
     drop
-;
-
-\ Simple string example
-variable greeting-buf
-
-: make-greeting
-    S" Hi there"   ( addr len )
-    type
-    cr
 ;

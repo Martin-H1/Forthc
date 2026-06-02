@@ -44,6 +44,10 @@ UINT_MAX        = $FFFF
 PSTACK_INIT = $02FF                 ; empty stack: X starts here
 HERE_INIT   = $0600                 ; Here starts on page 6.
 
+; Parameter stack offsets
+TOS = 0
+NOS = 2
+
 ; ---------------------------------------------------------------------------
 ; Conditionally import virtual machine runtime functions.
 ; Skipped when assembling vmachine.s itself (which exports them).
@@ -65,7 +69,9 @@ HERE_INIT   = $0600                 ; Here starts on page 6.
         .import vm_zlt
         .import vm_over
         .import vm_swap
+        .import vm_tuck
         .import vm_rot
+        .import vm_stod
         .import vm_2dup
         .import vm_2drop
         .import vm_do_loop_step
@@ -80,6 +86,7 @@ HERE_INIT   = $0600                 ; Here starts on page 6.
         .import vm_spaces
         .import vm_dot
         .import vm_udot
+        .import vm_dots
         .import vm_allot
         .import vm_cells
         .import vm_cellplus
@@ -200,6 +207,19 @@ HERE_INIT   = $0600                 ; Here starts on page 6.
         STA  0,X
 .endmacro
 
+;------------------------------------------------------------------------------
+; QDUP - Conditionally Duplicates the TOS ( x -- 0 | x x )
+;------------------------------------------------------------------------------
+.macro	QDUP
+	LDA	TOS,X
+	.local @skip
+	BEQ	@skip
+	DEX
+	DEX
+	STA	TOS,X
+@skip:
+.endmacro
+
 ; ---------------------------------------------------------------------------
 ; DROP  — ( n -- )
 ; ---------------------------------------------------------------------------
@@ -216,6 +236,19 @@ HERE_INIT   = $0600                 ; Here starts on page 6.
         STA  2,X                    ; overwrite n1
         INX
         INX
+.endmacro
+
+; ---------------------------------------------------------------------------
+; ABS  — ( n  -- |n| )
+; ---------------------------------------------------------------------------
+.macro  ABS
+        LDA     TOS,X
+        .local @done
+        BPL     @done
+        EOR     #UINT_MAX
+        INC     A
+        STA     TOS,X
+@done:
 .endmacro
 
 ; ---------------------------------------------------------------------------

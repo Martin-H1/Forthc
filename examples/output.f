@@ -6,6 +6,7 @@
     test-space
     test-spaces
     test-dot
+    test-dots
 ;
 
 : hello
@@ -33,5 +34,8 @@
     ." test-dot" cr
     0 12 - . cr
     0 12 - u. cr
-    -12399 .
+    -12399 . cr
 ;
+
+: test-dots
+ 1 2 3 4 .s cr ;
