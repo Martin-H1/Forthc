@@ -157,9 +157,12 @@ print(asm)
 | `TOR` | `n --` | `>r` |
 | `RFROM` | `-- n` | `r>` |
 | `DUP` | `n -- n n` | |
+| `QDUP` | `n -- [n n \| 0]` | Dup if TOS not zero |
 | `DROP` | `n --` | |
 | `NIP` | `n1 n2 -- n2` | |
+| `TUCK` | `n1 n2 -- n2 n1 n2` | |
 | `ADD` | `n1 n2 -- n3` | `+` |
+| `ABS` | `n -- \|n\|` | |
 | `SUB` | `n1 n2 -- n3` | `-` |
 | `STAR` | `n1 n2 -- n3` | `*` |
 | `EQ` | `n1 n2 -- flag` | `=` |
