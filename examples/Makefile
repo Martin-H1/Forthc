@@ -9,7 +9,8 @@ debug: obj obj/debug bin bin/debug \
 	bin/debug/fibonacci.bin bin/debug/fibonacci.srec \
 	bin/debug/output.bin bin/debug/output.srec \
 	bin/debug/math.bin bin/debug/math.srec \
-	bin/debug/memory.bin bin/debug/memory.srec
+	bin/debug/memory.bin bin/debug/memory.srec \
+	bin/debug/stack.bin bin/debug/stack.srec
 
 obj/debug/vmachine.o: ../targets/65816/vmachine.s
 	$(CA65) --cpu 65816 $(CA65FLAGS) $< -l $*.lst -o $@
@@ -28,6 +29,9 @@ bin/debug/math.bin: obj/debug/vmachine.o obj/debug/math.o
 
 bin/debug/memory.bin: obj/debug/vmachine.o obj/debug/memory.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/memory.bin -m bin/debug/memory.map $^
+
+bin/debug/stack.bin: obj/debug/vmachine.o obj/debug/stack.o
+	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/stack.bin -m bin/debug/stack.map $^
 
 %.s : %.f
 	$(PYTHON) "..\__main__.py" $<

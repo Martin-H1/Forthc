@@ -293,11 +293,12 @@ PUBLIC  vm_over
 ENDPUBLIC
 
 PUBLIC  vm_tuck
-	DUP				; TOS = b
-	LDA	4,X			; a
-	STA	NOS,X			; NOS = a
-	LDA	TOS,X			; b
-	STA	4,X			; Slot below a = b
+        DUP                             ; TOS = b
+        LDA     4,X                     ; a
+        STA     NOS,X                   ; NOS = a
+        LDA     TOS,X                   ; b
+        STA     4,X                     ; Slot below a = b
+        RTS
 ENDPUBLIC
 
 PUBLIC  vm_swap
@@ -343,13 +344,12 @@ ENDPUBLIC
 
 PUBLIC  vm_roll                     ; ROLL ( xu xu-1 ... x0 u -- xu-1 ... x0 xu)
         LDA  TOS,X
-        STA  vm_scratch0            ; save n
         INX
         INX
-        CMP  #00                    ; n=0, nothing to do
+        CMP  #0                     ; n=0, nothing to do
         BEQ  @return
-
-        ASL  vm_scratch0            ; scratch0 = n*2 (byte offset)
+        ASL  A                      ; n*2 (byte to word offset)
+        STA  vm_scratch0            ; save n*2
 
         ; Fetch x_n
         TXA
