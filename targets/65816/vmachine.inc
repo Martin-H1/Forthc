@@ -32,6 +32,8 @@
 
 ; Common constants
 
+CELL_SIZE = 2
+
 ; Integer constants (based on C's limits.h)
 INT_MIN         = $8000
 INT_MAX         = $7FFF
@@ -71,6 +73,8 @@ NOS = 2
         .import vm_swap
         .import vm_tuck
         .import vm_rot
+        .import vm_mrot
+        .import vm_roll
         .import vm_stod
         .import vm_2dup
         .import vm_2drop

@@ -24,6 +24,9 @@ __vmachine_s__ = 1
 MEM16   = $20                       ; accumulator width bit
 IND16   = $10                       ; index register width bit
 
+;
+; Useful macros
+;
 .macro ON16MEM
         REP     #MEM16              ; accumulator = 16-bit
         .A16
@@ -32,6 +35,25 @@ IND16   = $10                       ; index register width bit
 .macro OFF16MEM
         SEP     #MEM16              ; accumulator = 8-bit
         .A8
+.endmacro
+
+;------------------------------------------------------------------------------
+; PUBLIC / ENDPUBLIC - Export a subroutine as a global symbol
+;
+; Usage:
+;   PUBLIC my_function
+;       ... code ...
+;   ENDPUBLIC
+;------------------------------------------------------------------------------
+.macro  PUBLIC function_name
+	.export function_name
+	.proc   function_name
+	.A16
+	.I16
+.endmacro
+
+.macro  ENDPUBLIC
+	.endproc
 .endmacro
 
 .segment "CODE"
@@ -314,6 +336,53 @@ IND16   = $10                       ; index register width bit
         STA  0,X
         RTS
 .endproc
+
+PUBLIC  vm_mrot                     ; ( a b c -- c a b )
+        LDY  4,X                    ; a (bottom)
+        LDA  TOS,X                  ; b
+        STA  4,X                    ; bottom slot = b
+        LDA  NOS,X                  ; c (TOS)
+        STA  TOS,X                  ; middle slot = c
+        STY  NOS,X                  ; TOS = a
+        RTS
+ENDPUBLIC
+
+PUBLIC  vm_roll                     ; ROLL ( xu xu-1 ... x0 u -- xu-1 ... x0 xu)
+        LDA  TOS,X
+        STA  vm_scratch0            ; save n
+        INX
+        INX
+        CMP  #00                    ; n=0, nothing to do
+        BEQ  @return
+
+        ASL  vm_scratch0            ; scratch0 = n*2 (byte offset)
+
+        ; Fetch x_n
+        TXA
+        CLC
+        ADC  vm_scratch0
+        STA  vm_scratch1            ; scratch1 = addr of x_n
+        LDA  (vm_scratch1)          ; fetch x_n
+        PHA                         ; save on return stack
+
+        ; Shift x_0..x_n-1 up by one cell
+@shift_loop:
+        LDA  vm_scratch1
+        SEC
+        SBC  #CELL_SIZE
+        STA  vm_scratch1            ; point to next lower item
+        LDA  (vm_scratch1)          ; fetch it
+        LDY  #CELL_SIZE
+        STA  (vm_scratch1),Y        ; store one cell higher
+        TXA
+        CMP  vm_scratch1            ; reached PSP (x_0 position)?
+        BNE  @shift_loop
+
+        PLA                         ; restore x_n
+        STA  TOS,X                  ; store at TOS (x_0 position)
+@return:
+        RTS
+ENDPUBLIC
 
 ; vm_stod - sign extend a word to a long.
 .export vm_stod
@@ -764,7 +833,11 @@ calc_depth:
 .export vm_sp_shadow
 vm_sp_shadow:   .res 2              ; shadow of X (P-stack pointer)
 .export vm_here_ptr
-vm_here_ptr:    .res 2              ; HERE pointer
+vm_here_ptr:    .res 2              ; HERE pointer for bump allocator
+.export vm_scratch0
+vm_scratch0:    .res 2              ; general purpose scratch
+.export vm_scratch1
+vm_scratch1:    .res 2              ; general purpose scratch
 .export vm_tmp1
 vm_tmp1:        .res 2              ; scratch
 .export vm_tmp2
