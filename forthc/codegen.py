@@ -129,7 +129,7 @@ RUNTIME_CALLS: dict[str, str] = {
     'and':    'vm_and',
     'or':     'vm_or',
     'xor':    'vm_xor',
-    'not':    'vm_not',
+    'invert': 'vm_not',
     'lshift': 'vm_lshift',
     'rshift': 'vm_rshift',
     '<':      'vm_lt',
