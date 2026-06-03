@@ -105,6 +105,8 @@ INLINE_OPS: dict[str, str] = {
     'c!':     'BSTORE',
     '>r':     'TOR',
     'r>':     'RFROM',
+    '2>r':    'TWOTOR',
+    '2r>':    'TWORFROM',
     'dup':    'DUP',
     '?dup':   'QDUP',
     'drop':   'DROP',
@@ -387,7 +389,7 @@ class CodeGenerator:
         self._gen_body(node.consequent, str_pool)
 
         if node.alternate:
-            self._emit_instr(f'CALL {end_lbl}', 'if: jump to endif')
+            self._emit_instr(f'BRANCH {end_lbl}', 'if: jump to endif')
             self._emit_label(else_lbl)
             self._gen_body(node.alternate, str_pool)
         else:
@@ -416,14 +418,13 @@ class CodeGenerator:
     def _gen_do_loop(self, node: DoLoop, str_pool: list):
         top_lbl = self._fresh_label('do')
         end_lbl = self._fresh_label('loop')
-        self._emit_instr('TOR',  'do: push index to R')
-        self._emit_instr('TOR',  'do: push limit to R')
+        self._emit_instr('TWOTOR', 'do: push limit and index to R')
         self._emit_label(top_lbl)
         self._gen_body(node.body, str_pool)
         self._emit_instr('CALL vm_do_loop_step', 'loop: increment and test')
         self._emit_instr(f'ZBRANCH {top_lbl}',  'loop: branch if not done')
-        self._emit_instr('RFROM', 'loop: discard limit from R')
-        self._emit_instr('DROP',  'loop: drop limit')
+        self._emit_instr('TWORFROM', 'loop: discard limit and index from R')
+        self._emit_instr('CALL vm_2drop',  'loop: drop limit and index')
         self._emit_label(end_lbl)
 
     # ------------------------------------------------------------------

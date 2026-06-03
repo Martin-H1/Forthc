@@ -418,26 +418,19 @@ ENDPUBLIC
 ; Pushes $FFFF (done) or $0000 (continue) onto the parameter stack.
 ; ---------------------------------------------------------------------------
 PUBLIC  vm_do_loop_step
-        TSX
-        LDA  $0103,X                ; index (hardware stack at $0100+)
+        LDA  3,S                    ; index (hardware stack at $0100+)
         INC  A
-        STA  $0103,X                ; store incremented index
-        CMP  $0105,X                ; compare to limit
+        STA  3,S                    ; store incremented index
+        CMP  5,S                    ; compare to limit
         BNE  @continue
-        LDX  vm_sp_shadow           ; restore P-stack pointer
         LDA  #$FFFF                 ; done: push true
-        DEX
-        DEX
-        STA  0,X
-        STX  vm_sp_shadow
-        RTS
+        BRA  @return
 @continue:
-        LDX  vm_sp_shadow
         LDA  #0                     ; not done: push false
+@return:
         DEX
         DEX
         STA  0,X
-        STX  vm_sp_shadow
         RTS
 ENDPUBLIC
 
@@ -445,13 +438,10 @@ ENDPUBLIC
 ; I  — ( -- n )  copy loop index to parameter stack
 ; ---------------------------------------------------------------------------
 PUBLIC  vm_i
-        TSX
-        LDA  $0103,X                ; index from return stack
-        LDX  vm_sp_shadow
+        LDA  3,S                    ; index from return stack
         DEX
         DEX
         STA  0,X
-        STX  vm_sp_shadow
         RTS
 ENDPUBLIC
 
@@ -570,7 +560,23 @@ PUBLIC  vm_spaces
         RTS
 ENDPUBLIC
 
+; vm_dot - prints a 16 bit signed number to the console.
 PUBLIC  vm_dot
+        JSR  print_sdec
+        LDA  #' '
+        JSR  platform_putc
+        RTS
+ENDPUBLIC
+
+; vm_udot - prints a 16 bit unsigned number to the console.
+PUBLIC  vm_udot
+        JSR  print_udec
+        LDA  #' '
+        JSR  platform_putc
+        RTS
+ENDPUBLIC
+
+.proc   print_sdec
         LDA  0,X
         CMP  #0
         BPL  vm_udot
@@ -580,10 +586,8 @@ PUBLIC  vm_dot
         STA  0,X
         LDA  #'-'
         JSR  platform_putc
-ENDPUBLIC
-
-; vm_udot - prints a 16 bit unsigned number to the console.
-PUBLIC  vm_udot
+.endproc
+.proc   print_udec
         ; Print TOS as unsigned decimal via repeated division
         ; Digits pushed onto hardware stack in reverse, then printed
         NUM_MSB = 4             ; Offsets to locals
@@ -639,7 +643,7 @@ PUBLIC  vm_udot
         PLA
         PLD
         RTS
-ENDPUBLIC
+.endproc
 
 PUBLIC  vm_dots
         PHX                     ; Save PSP
@@ -650,7 +654,7 @@ PUBLIC  vm_dots
         STA  0,X
         LDA  #'<'               ; print "<depth> "
         JSR  platform_putc
-        JSR  vm_dot
+        JSR  print_udec
         LDA  #'>'
         JSR  platform_putc
         LDA  #' '
@@ -665,8 +669,6 @@ PUBLIC  vm_dots
         JSR  vm_dot
         DEX
         DEX
-        LDA  #' '
-        JSR  platform_putc
         BRA  @print_loop
 @ds_done:
         PLX                     ; Restore PSP
