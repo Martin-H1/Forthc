@@ -121,10 +121,6 @@ INLINE_OPS: dict[str, str] = {
     '-':      'SUB',
     '*':      'STAR',
     '=':      'EQ',
-    'emit':   'EMIT',
-    'key':    'KEY',
-    'type':   'TYPE',
-    'cputs':  'CPUTS',
     'clear':  'CLEAR',
 }
 
@@ -154,11 +150,6 @@ RUNTIME_CALLS: dict[str, str] = {
     '2drop':  'vm_2drop',
     'i':      'vm_i',
     'j':      'vm_j',
-    'cr':     'vm_cr',
-    'space':  'vm_space',
-    'spaces': 'vm_spaces',
-    '.':      'vm_dot',
-    'u.':     'vm_udot',
     'allot':  'vm_allot',
     'cells':  'vm_cells',
     'cell+':  'vm_cellplus',
@@ -169,8 +160,16 @@ RUNTIME_CALLS: dict[str, str] = {
     '.s':     'vm_dots',
     'tuck':   'vm_tuck',
     's>d':    'vm_stod',
+    'cr':     'vm_cr',
+    'space':  'vm_space',
+    'spaces': 'vm_spaces',
+    '.':      'vm_dot',
+    'u.':     'vm_udot',
+    'cputs':  'vm_cputs',
+    'emit':   'vm_emit',
+    'key':    'vm_key',
+    'type':   'vm_type',
 }
-
 
 class CodeGenError(Exception):
     def __init__(self, msg, node: ASTNode | None = None):
@@ -338,7 +337,7 @@ class CodeGenerator:
             lbl = self._fresh_str_label()
             str_pool.append((lbl, node.text))
             self._emit_instr(f'LIT {lbl}', f'print: "{node.text[:30]}"')
-            self._emit_instr('CPUTS',      'print null-terminated string')
+            self._emit_instr('CALL vm_cputs',    'print null-terminated string')
 
         elif isinstance(node, WordCall):
             self._gen_word_call(node)

@@ -174,10 +174,6 @@ print(asm)
 | `SUB` | `n1 n2 -- n3` | `-` |
 | `STAR` | `n1 n2 -- n3` | `*` |
 | `EQ` | `n1 n2 -- flag` | `=` |
-| `EMIT` | `c --` | Output character |
-| `KEY` | `-- c` | Read character |
-| `TYPE` | `addr u --` | Output u chars |
-| `CPUTS` | `addr --` | Output C string |
 | `CLEAR` | `… --` | Reset stack |
 
 Complex operations (`/`, `mod`, `swap`, `over`, `rot`, `and`, `or`, …) emit
