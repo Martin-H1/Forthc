@@ -2,6 +2,16 @@
 
 .main main
 
+: urinary-test
+      0 invert ." 0 invert (expect -1) = " . cr
+     11 1+     ." 11 1+ (expect 12) = "    . cr
+     10 1-     ." 10 1- (expect 9) = "     . cr
+     24 2*     ." 24 2* (expect 48) = "    . cr
+    -24 2*     ." -24 2* (expect -48) = "  . cr
+     24 2/     ." 24 2/ (expect 12) = "    . cr
+    -24 2/     ." -24 2/ (expect -12) = "  . cr
+;
+
 : plus-test
     ." 597 + 4133 (expect 4730) = "
     597  4133 + . cr
@@ -43,6 +53,7 @@
 
 : main
     cr
+    urinary-test
     plus-test
     minus-test
     star-test

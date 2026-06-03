@@ -111,6 +111,12 @@ INLINE_OPS: dict[str, str] = {
     '?dup':   'QDUP',
     'drop':   'DROP',
     'nip':    'NIP',
+    'abs':    'ABS',
+    'invert': 'INVERT',
+    '1+':     'ONEPLUS',
+    '1-':     'ONEMINUS',
+    '2*':     'TWOSTAR',
+    '2/':     'TWOSLASH',
     '+':      'ADD',
     '-':      'SUB',
     '*':      'STAR',
@@ -120,7 +126,6 @@ INLINE_OPS: dict[str, str] = {
     'type':   'TYPE',
     'cputs':  'CPUTS',
     'clear':  'CLEAR',
-    'abs':    'ABS',
 }
 
 # Words that require a call to a runtime routine.
@@ -131,7 +136,6 @@ RUNTIME_CALLS: dict[str, str] = {
     'and':    'vm_and',
     'or':     'vm_or',
     'xor':    'vm_xor',
-    'invert': 'vm_not',
     'lshift': 'vm_lshift',
     'rshift': 'vm_rshift',
     '<':      'vm_lt',
