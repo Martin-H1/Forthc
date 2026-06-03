@@ -149,6 +149,7 @@ print(asm)
 | `LIT n` | `-- n` | Push literal |
 | `EXIT` | | Subroutine return |
 | `CALL addr` | | Subroutine call |
+| `BRANCH addr` | ` --` | Branch unconditionally |
 | `ZBRANCH addr` | `flag --` | Branch if zero |
 | `FETCH` | `addr -- n` | `@` |
 | `STORE` | `n addr --` | `!` |
@@ -156,6 +157,8 @@ print(asm)
 | `BSTORE` | `b addr --` | `c!` |
 | `TOR` | `n --` | `>r` |
 | `RFROM` | `-- n` | `r>` |
+| `TWOTOR` | `n1 n2 --` | `2>r` |
+| `TWORFROM` | `-- n1 n2` | `2r>` |
 | `DUP` | `n -- n n` | |
 | `QDUP` | `n -- [n n \| 0]` | Dup if TOS not zero |
 | `DROP` | `n --` | |
