@@ -10,10 +10,14 @@
     1 -2 > ." 1 -2 > test (expect -1) = " . cr
     1 2 < ." 1 2 < test (expect -1) = " . cr
     1 2 > ." 1 2 > test (expect 0) = " . cr
-    0 0= ." 0 0= test (expect -1) = " . cr
-    1 0= ." 1 0= test (expect 0) = " . cr
+     0 0= ." 0 0= test (expect -1) = " . cr
+     1 0= ." 1 0= test (expect 0) = " . cr
+     1 0<> ." 1 0<> test (expect 0) = " . cr
+     0 0<> ." 0 0<> test (expect -1) = " . cr
     -1 0< ." -1 0< test (expect -1) = " . cr
-    1 0< ." 1 0< test (expect 0) = " . cr
+     1 0< ." 1 0< test (expect 0) = " . cr
+    -1 0> ." -1 0> test (expect 0) = " . cr
+     1 0> ." 1 0> test (expect -1) = " . cr
     1 2 = ." 1 2 = test (expect 0) = " . cr
     2 2 = ." 2 2 = test (expect -1) = " . cr
     ." Logic test exit" cr

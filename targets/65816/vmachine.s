@@ -283,7 +283,7 @@ ENDPUBLIC
 ;------------------------------------------------------------------------------
 ; 0<> ( a -- flag )
 ;------------------------------------------------------------------------------
-PUBLIC  vm_zneq
+PUBLIC  vm_zne
         LDA     TOS,X
         BEQ     @return
         LDA     #FORTH_TRUE
@@ -312,6 +312,7 @@ PUBLIC  vm_zgt
         BEQ  @false
         BPL  @true
 @false: LDA  #FORTH_FALSE
+        STA  TOS,X
         RTS
 @true:  LDA  #FORTH_TRUE
         STA  TOS,X

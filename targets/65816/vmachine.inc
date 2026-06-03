@@ -72,7 +72,9 @@ NOS             = 2
         .import vm_lt
         .import vm_gt
         .import vm_zeq
+        .import vm_zne
         .import vm_zlt
+        .import vm_zgt
         .import vm_over
         .import vm_swap
         .import vm_tuck
