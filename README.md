@@ -164,8 +164,13 @@ print(asm)
 | `DROP` | `n --` | |
 | `NIP` | `n1 n2 -- n2` | |
 | `TUCK` | `n1 n2 -- n2 n1 n2` | |
-| `ADD` | `n1 n2 -- n3` | `+` |
 | `ABS` | `n -- \|n\|` | |
+| `INVERT` | `n -- ~n` | |
+| `ONEPLUS` | `n -- n+1` | 1+ |
+| `ONEMINUS` | `n -- n-1` | 1- |
+| `TWOSTAR` | `n -- n*2` | 2* |
+| `TWOSLASH` | `n -- n/2` | 2/ |
+| `ADD` | `n1 n2 -- n3` | `+` |
 | `SUB` | `n1 n2 -- n3` | `-` |
 | `STAR` | `n1 n2 -- n3` | `*` |
 | `EQ` | `n1 n2 -- flag` | `=` |
