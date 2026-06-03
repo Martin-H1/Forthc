@@ -7,6 +7,7 @@
     0 if-else-test
     1 if-else-test
     do-loop-test
+    begin-until-test
     ." Control structures test exit" cr
 ;
 
@@ -20,4 +21,13 @@
 
 : do-loop-test
     10 0 do i . loop cr
+;
+
+: begin-until-test
+    10 begin
+        dup .
+        1 -
+        dup 0 =
+    until
+    drop cr
 ;

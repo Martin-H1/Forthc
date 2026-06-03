@@ -9,8 +9,9 @@
 ;   Calling convention: subroutine-threaded (CALL → JSR, EXIT → RTS).
 ;
 ;   Memory layout (example, adjust with .org):
-;       $0000-$00FF  zero page: parameter stack (128 bytes = 64 cells max)
+;       $0000-$00FF  zero page: scratch register variables
 ;       $0100-$01FF  hardware stack (return stack, used by JSR/RTS)
+;       $0200-$02FF  parameter stack
 ;       $0200+       code and data
 ;
 ; Usage:
@@ -32,7 +33,11 @@
 
 ; Common constants
 
-CELL_SIZE = 2
+; ANS Forth boolean values
+FORTH_TRUE      = $FFFF
+FORTH_FALSE     = $0000
+
+CELL_SIZE       = 2
 
 ; Integer constants (based on C's limits.h)
 INT_MIN         = $8000
@@ -43,12 +48,12 @@ UINT_MAX        = $FFFF
 ; ---------------------------------------------------------------------------
 ; VM pointer initial values
 ; ---------------------------------------------------------------------------
-PSTACK_INIT = $02FF                 ; empty stack: X starts here
-HERE_INIT   = $0600                 ; Here starts on page 6.
+PSP_INIT        = $02FF             ; empty stack: X starts here
+HERE_INIT       = $0600             ; Here starts on page 6.
 
 ; Parameter stack offsets
-TOS = 0
-NOS = 2
+TOS             = 0
+NOS             = 2
 
 ; ---------------------------------------------------------------------------
 ; Conditionally import virtual machine runtime functions.
@@ -109,10 +114,10 @@ NOS = 2
 ; LIT  — push a literal value onto the parameter stack
 ; ---------------------------------------------------------------------------
 .macro  LIT  val
+        LDA  #val
         DEX                         ; X -= 2  (16-bit decrement)
         DEX
-        LDA  #val
-        STA  0,X
+        STA  TOS,X
 .endmacro
 
 ; ---------------------------------------------------------------------------
@@ -133,62 +138,53 @@ NOS = 2
 ; FETCH  @  — ( addr -- n )   fetch cell at addr
 ; ---------------------------------------------------------------------------
 .macro  FETCH
-        LDA  0,X                    ; A = addr (TOS)
-        TAY                         ; Y = addr
+        LDY  TOS,X                  ; Y = addr (TOS)
         LDA  0,Y                    ; A = value at addr
-        STA  0,X                    ; replace TOS
+        STA  TOS,X                  ; replace TOS
 .endmacro
 
 ; ---------------------------------------------------------------------------
 ; STORE  !  — ( n addr -- )   store n at addr
 ; ---------------------------------------------------------------------------
 .macro  STORE
-        LDA  0,X                    ; A = addr (TOS)
-        TAY
-        INX                         ; pop addr
-        INX
-        LDA  0,X                    ; A = n (new TOS)
+        LDY  TOS,X                  ; Y = addr (TOS)
+        DROP                        ; pop addr
+        LDA  TOS,X                  ; A = n (new TOS)
         STA  0,Y                    ; store
-        INX                         ; pop n
-        INX
+        DROP                        ; pop n
 .endmacro
 
 ; ---------------------------------------------------------------------------
 ; BFETCH  C@  — ( addr -- b )
 ; ---------------------------------------------------------------------------
 .macro  BFETCH
-        LDA  0,X
-        TAY
+        LDY  TOS,X
         LDA  #0
         SEP  #$20                   ; 8-bit A
         LDA  0,Y
         REP  #$20                   ; 16-bit A
-        STA  0,X
+        STA  TOS,X
 .endmacro
 
 ; ---------------------------------------------------------------------------
 ; BSTORE  C!  — ( b addr -- )
 ; ---------------------------------------------------------------------------
 .macro  BSTORE
-        LDA  0,X                    ; addr
-        TAY
-        INX
-        INX
+        LDY  TOS,X                  ; addr
+        DROP
         SEP  #$20
-        LDA  0,X                    ; b (low byte)
+        LDA  TOS,X                  ; b (low byte)
         STA  0,Y
         REP  #$20
-        INX
-        INX
+        DROP
 .endmacro
 
 ; ---------------------------------------------------------------------------
 ; TOR  >R  — ( n -- ) [R: -- n]
 ; ---------------------------------------------------------------------------
 .macro  TOR
-        LDA  0,X
-        INX
-        INX
+        LDA  TOS,X
+        DROP
         PHA                         ; push A onto hardware (return) stack
 .endmacro
 
@@ -199,9 +195,8 @@ NOS = 2
         PLA
         DEX
         DEX
-        STA  0,X
+        STA  TOS,X
 .endmacro
-
 
 ; ---------------------------------------------------------------------------
 ; TWOTOR  >R  — ( x1 x2 -- ) [R: -- x1 x2] equivalent to SWAP >R >R.
@@ -211,10 +206,8 @@ NOS = 2
         PHA                         ; push x1 first
         LDA  TOS,X                  ; x2 (TOS)
         PHA                         ; push x2 on top
-        INX
-        INX
-        INX
-        INX
+        DROP
+        DROP
 .endmacro
 
 ; ---------------------------------------------------------------------------
@@ -235,22 +228,22 @@ NOS = 2
 ; DUP  — ( n -- n n )
 ; ---------------------------------------------------------------------------
 .macro  DUP
-        LDA  0,X
+        LDA  TOS,X
         DEX
         DEX
-        STA  0,X
+        STA  TOS,X
 .endmacro
 
 ;------------------------------------------------------------------------------
 ; QDUP - Conditionally Duplicates the TOS ( x -- 0 | x x )
 ;------------------------------------------------------------------------------
-.macro	QDUP
-	LDA	TOS,X
-	.local @skip
-	BEQ	@skip
-	DEX
-	DEX
-	STA	TOS,X
+.macro  QDUP
+        LDA  TOS,X
+        .local @skip
+        BEQ  @skip
+        DEX
+        DEX
+        STA  TOS,X
 @skip:
 .endmacro
 
@@ -266,22 +259,21 @@ NOS = 2
 ; NIP  — ( n1 n2 -- n2 )
 ; ---------------------------------------------------------------------------
 .macro  NIP
-        LDA  0,X                    ; n2
-        STA  2,X                    ; overwrite n1
-        INX
-        INX
+        LDA  TOS,X                  ; n2
+        STA  NOS,X                  ; overwrite n1
+        DROP
 .endmacro
 
 ; ---------------------------------------------------------------------------
 ; ABS  — ( n  -- |n| )
 ; ---------------------------------------------------------------------------
 .macro  ABS
-        LDA     TOS,X
+        LDA  TOS,X
         .local @done
-        BPL     @done
-        EOR     #UINT_MAX
-        INC     A
-        STA     TOS,X
+        BPL  @done
+        EOR  #UINT_MAX
+        INC  A
+        STA  TOS,X
 @done:
 .endmacro
 
@@ -289,24 +281,22 @@ NOS = 2
 ; ADD  +  — ( n1 n2 -- n3 )
 ; ---------------------------------------------------------------------------
 .macro  ADD
-        LDA  2,X                    ; n1
+        LDA  NOS,X                  ; n1
         CLC
-        ADC  0,X                    ; + n2
-        INX
-        INX
-        STA  0,X                    ; result
+        ADC  TOS,X                  ; + n2
+        DROP
+        STA  TOS,X                  ; result
 .endmacro
 
 ; ---------------------------------------------------------------------------
 ; SUB  -  — ( n1 n2 -- n3 )
 ; ---------------------------------------------------------------------------
 .macro  SUB
-        LDA  2,X                    ; n1
+        LDA  NOS,X                  ; n1
         SEC
-        SBC  0,X                    ; - n2
-        INX
-        INX
-        STA  0,X
+        SBC  TOS,X                  ; - n2
+        DROP
+        STA  TOS,X
 .endmacro
 
 ; ---------------------------------------------------------------------------
@@ -322,14 +312,13 @@ NOS = 2
 ; ---------------------------------------------------------------------------
 .macro  EQ
         LDA  TOS,X                  ; n2
-        INX
-        INX
+        DROP
         CMP  TOS,X                  ; compare to n1
         BEQ  :+
-        LDA  #0
+        LDA  #FORTH_FALSE
         BRA  :++
-:       LDA  #$FFFF
-:       STA  0,X
+:       LDA  #FORTH_TRUE
+:       STA  TOS,X
 .endmacro
 
 ; ---------------------------------------------------------------------------
@@ -344,17 +333,18 @@ NOS = 2
 ; ---------------------------------------------------------------------------
 .macro  ZBRANCH  addr
         LDA  TOS,X
-        INX
-        INX
+        DROP
         CMP  #0
-        BEQ  addr
+        BNE  :+
+        JMP  addr
+:
 .endmacro
 
 ; ---------------------------------------------------------------------------
 ; CLEAR  — ( ... -- )  reset parameter stack
 ; ---------------------------------------------------------------------------
 .macro  CLEAR
-        LDX  #PSTACK_INIT
+        LDX  #PSP_INIT
 .endmacro
 
 ; ---------------------------------------------------------------------------
@@ -390,7 +380,7 @@ NOS = 2
 ; ---------------------------------------------------------------------------
 .macro  VM_INIT
         REP  #$30                   ; 16-bit A and X
-        LDX  #PSTACK_INIT           ; initialise parameter stack pointer
+        LDX  #PSP_INIT              ; initialise parameter stack pointer
         LDA  #HERE_INIT
         STA  vm_here_ptr
 .endmacro

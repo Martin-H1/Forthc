@@ -71,18 +71,17 @@ PUBLIC  MAIN
         RTL
 ENDPUBLIC
 
-
 ; ---------------------------------------------------------------------------
 ; vm_star  —  ( n1 n2 -- n3 )   16×16 → 16 multiply
 ; ---------------------------------------------------------------------------
 ; 65816 has no multiply instruction; we use a shift-and-add loop.
 ; ---------------------------------------------------------------------------
 PUBLIC  vm_star
-        LDA  0,X                    ; multiplicand n2 (TOS)
+        LDA  TOS,X                  ; multiplicand n2 (TOS)
         INX
         INX
         STA  vm_tmp1                ; save n2
-        LDA  0,X                    ; multiplier n1
+        LDA  TOS,X                  ; multiplier n1
         LDY  #0                     ; accumulator
         STX  vm_sp_shadow
         LDX  #16                    ; 16 bits (loop counter, not stack ptr)
@@ -100,7 +99,7 @@ PUBLIC  vm_star
         DEX
         BNE  @loop
         LDX  vm_sp_shadow           ; restore parameter stack pointer
-        STY  0,X                    ; store result at TOS
+        STY  TOS,X                  ; store result at TOS
         RTS
 ENDPUBLIC
 
@@ -119,10 +118,10 @@ ENDPUBLIC
 ; ---------------------------------------------------------------------------
 PUBLIC  vm_mod
         JSR  vm_divmod
-        LDA  2,X                    ; remainder → TOS
+        LDA  NOS,X                  ; remainder → TOS
         INX
         INX
-        STA  0,X
+        STA  TOS,X
         RTS
 ENDPUBLIC
 
@@ -139,25 +138,25 @@ ENDPUBLIC
 ; for production use).
 ; ---------------------------------------------------------------------------
 .proc   vm_divmod
-        LDA  0,X                    ; divisor
+        LDA  TOS,X                  ; divisor
         BNE  @ok
-        STZ  0,X                    ; division by zero — push 0 0
-        STZ  2,X
+        STZ  TOS,X                  ; division by zero — push 0 0
+        STZ  NOS,X
         RTS
 @ok:
-        LDA  2,X                    ; dividend n1
+        LDA  NOS,X                  ; dividend n1
         LDY  #0                     ; quotient
 @loop:
-        CMP  0,X                    ; dividend >= divisor?
+        CMP  TOS,X                  ; dividend >= divisor?
         BCC  @done
         SEC
-        SBC  0,X                    ; dividend -= divisor
+        SBC  TOS,X                  ; dividend -= divisor
         INY
         BRA  @loop
 @done:
-        STA  2,X                    ; remainder (NOS)
+        STA  NOS,X                  ; remainder (NOS)
         TYA
-        STA  0,X                    ; quotient (TOS)
+        STA  TOS,X                  ; quotient (TOS)
         RTS
 ENDPUBLIC
 
@@ -165,44 +164,43 @@ ENDPUBLIC
 ; Bitwise operations
 ; ---------------------------------------------------------------------------
 PUBLIC  vm_and
-        LDA  2,X
-        AND  0,X
-        INX
-        INX
-        STA  0,X
+        LDA  NOS,X
+        AND  TOS,X
+        DROP
+        STA  TOS,X
         RTS
 ENDPUBLIC
 
 PUBLIC  vm_or
-        LDA  2,X
-        ORA  0,X
-        INX
-        INX
-        STA  0,X
+        LDA  NOS,X
+        ORA  TOS,X
+        DROP
+        STA  TOS,X
         RTS
 ENDPUBLIC
 
 PUBLIC  vm_xor
-        LDA  2,X
-        EOR  0,X
-        INX
-        INX
-        STA  0,X
+        LDA  NOS,X
+        EOR  TOS,X
+        DROP
+        STA  TOS,X
         RTS
 ENDPUBLIC
 
 PUBLIC  vm_not
-        LDA  0,X
+        LDA  TOS,X
         EOR  #$FFFF
-        STA  0,X
+        STA  TOS,X
         RTS
 ENDPUBLIC
 
+;------------------------------------------------------------------------------
+; LSHIFT ( a u -- a<<u )
+;------------------------------------------------------------------------------
 PUBLIC  vm_lshift
-        LDA  2,X                    ; value
-        LDY  0,X                    ; shift count
-        INX
-        INX
+        LDA  NOS,X                  ; a value
+        LDY  TOS,X                  ; u shift count
+        DROP
 @loop:
         CPY  #0
         BEQ  @done
@@ -210,15 +208,17 @@ PUBLIC  vm_lshift
         DEY
         BRA  @loop
 @done:
-        STA  0,X
+        STA  TOS,X
         RTS
 ENDPUBLIC
 
+;------------------------------------------------------------------------------
+; RSHIFT ( a u -- a>>u ) logical shift right
+;------------------------------------------------------------------------------
 PUBLIC  vm_rshift
-        LDA  2,X
-        LDY  0,X
-        INX
-        INX
+        LDA  NOS,X                  ; a
+        LDY  TOS,X                  ; u
+        DROP
 @loop:
         CPY  #0
         BEQ  @done
@@ -226,58 +226,102 @@ PUBLIC  vm_rshift
         DEY
         BRA  @loop
 @done:
-        STA  0,X
+        STA  TOS,X
         RTS
 ENDPUBLIC
 
-; ---------------------------------------------------------------------------
-; Comparison  ( n1 n2 -- flag )
-; ---------------------------------------------------------------------------
+;------------------------------------------------------------------------------
+; < ( a b -- flag ) signed
+;------------------------------------------------------------------------------
 PUBLIC  vm_lt
-        LDA  2,X
-        CMP  0,X
-        INX
-        INX
-        BCC  @true
-        LDA  #0
-        STA  0,X
-        RTS
-@true:  LDA  #$FFFF
-        STA  0,X
+        LDA  NOS,X                  ; a
+        SEC
+        SBC  TOS,X                  ; a - b
+        BVS  @overflow              ; Overflow-aware signed compare
+        BMI  @true                  ; result negative and no overflow = a<b
+        LDA  #FORTH_FALSE           ; Set TOS to false
+        BRA  @return
+@overflow:
+        BPL  @true                  ; overflow + positive result = a<b
+@false: LDA  #FORTH_FALSE           ; Set TOS to false
+        BRA  @return
+@true:  LDA  #FORTH_TRUE            ; Set TOS to true
+@return:
+        DROP                        ; Drop b
+        STA  TOS,X                  ; Set TOS to result
         RTS
 ENDPUBLIC
 
+;------------------------------------------------------------------------------
+; > ( a b -- flag ) signed
+;------------------------------------------------------------------------------
 PUBLIC  vm_gt
-        LDA  0,X
-        CMP  2,X
-        INX
-        INX
-        BCC  @true
-        LDA  #0
-        STA  0,X
-        RTS
-@true:  LDA  #$FFFF
-        STA  0,X
+        LDA  TOS,X                  ; b
+        SEC
+        SBC  NOS,X                  ; b - a (reversed for >)
+        BVS  @overflow              ; Overflow-aware signed compare
+        BMI  @true                  ; like the previous function
+        LDA  #FORTH_FALSE           ; Set TOS to false
+        BRA  @return
+@overflow:
+        BPL  @true
+@false: LDA  #FORTH_FALSE           ; Set TOS to false
+        BRA  @return
+@true:  LDA  #FORTH_TRUE            ; Set TOS to true
+@return:
+        DROP                        ; Drop b
+        STA  TOS,X                  ; Set TOS to result
         RTS
 ENDPUBLIC
 
+;------------------------------------------------------------------------------
+; 0= ( a -- flag )
+;------------------------------------------------------------------------------
 PUBLIC  vm_zeq
-        LDA  0,X
+        LDA  TOS,X
         BNE  @false
-        LDA  #$FFFF
-        STA  0,X
+        LDA  #FORTH_TRUE
+        STA  TOS,X
         RTS
-@false: STZ  0,X
+@false: STZ  TOS,X
         RTS
 ENDPUBLIC
 
+;------------------------------------------------------------------------------
+; 0<> ( a -- flag )
+;------------------------------------------------------------------------------
+PUBLIC  vm_zneq
+        LDA     TOS,X
+        BEQ     @return
+        LDA     #FORTH_TRUE
+@return:STA     TOS,X
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; 0< ( a -- flag )
+;------------------------------------------------------------------------------
 PUBLIC  vm_zlt
-        LDA  0,X
+        LDA  TOS,X
         BMI  @true
-        STZ  0,X
+        STZ  TOS,X
         RTS
 @true:  LDA  #$FFFF
-        STA  0,X
+        STA  TOS,X
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; 0> ( a -- flag )
+;------------------------------------------------------------------------------
+PUBLIC  vm_zgt
+        LDA  TOS,X
+        BEQ  @false
+        BPL  @true
+@false: LDA  #FORTH_FALSE
+        RTS
+@true:  LDA  #FORTH_TRUE
+        STA  TOS,X
         RTS
 ENDPUBLIC
 
@@ -285,50 +329,50 @@ ENDPUBLIC
 ; Stack manipulation
 ; ---------------------------------------------------------------------------
 PUBLIC  vm_over
-        LDA  2,X
+        LDA  NOS,X
         DEX
         DEX
-        STA  0,X
+        STA  TOS,X
         RTS
 ENDPUBLIC
 
 PUBLIC  vm_tuck
-        DUP                             ; TOS = b
-        LDA     4,X                     ; a
-        STA     NOS,X                   ; NOS = a
-        LDA     TOS,X                   ; b
-        STA     4,X                     ; Slot below a = b
+        DUP                         ; TOS = b
+        LDA  4,X                    ; a
+        STA  NOS,X                  ; NOS = a
+        LDA  TOS,X                  ; b
+        STA  4,X                    ; Slot below a = b
         RTS
 ENDPUBLIC
 
 PUBLIC  vm_swap
-        LDA  0,X
-        LDY  2,X
-        STY  0,X
-        STA  2,X
+        LDA  TOS,X
+        LDY  NOS,X
+        STY  TOS,X
+        STA  NOS,X
         RTS
 ENDPUBLIC
 
-PUBLIC	vm_pick                         ; ( xu...x1 x0 u -- xu...x1 x0 xu )
-        STX  vm_scratch0                ; scratch0 = stack base (PSP)
-        LDA  TOS,X                      ; u
-        INC  A                          ; u+1 (skip u itself)
-        ASL  A                          ; * 2 (cell size)
+PUBLIC  vm_pick                     ; ( xu...x1 x0 u -- xu...x1 x0 xu )
+        STX  vm_scratch0            ; scratch0 = stack base (PSP)
+        LDA  TOS,X                  ; u
+        INC  A                      ; u+1 (skip u itself)
+        ASL  A                      ; * 2 (cell size)
         CLC
-        ADC  vm_scratch0                ; X + (u+1)*2
+        ADC  vm_scratch0            ; X + (u+1)*2
         STA  vm_scratch0
-        LDA  (vm_scratch0)              ; Fetch xu
-        STA  TOS,X                      ; Replace u with xu
+        LDA  (vm_scratch0)          ; Fetch xu
+        STA  TOS,X                  ; Replace u with xu
         RTS
 ENDPUBLIC
 
 PUBLIC  vm_rot
         LDA  4,X                    ; n1
-        LDY  2,X                    ; n2
+        LDY  NOS,X                  ; n2
         STY  4,X
-        LDY  0,X                    ; n3
-        STY  2,X
-        STA  0,X
+        LDY  TOS,X                  ; n3
+        STY  NOS,X
+        STA  TOS,X
         RTS
 ENDPUBLIC
 
@@ -344,8 +388,7 @@ ENDPUBLIC
 
 PUBLIC  vm_roll                     ; ROLL ( xu xu-1 ... x0 u -- xu-1 ... x0 xu)
         LDA  TOS,X
-        INX
-        INX
+        DROP
         CMP  #0                     ; n=0, nothing to do
         BEQ  @return
         ASL  A                      ; n*2 (byte to word offset)
@@ -382,33 +425,31 @@ ENDPUBLIC
 PUBLIC  vm_stod
         DEX
         DEX
-        LDA     NOS,X           ; n
-        BPL     @positive
-        LDA     #MINUS_ONE      ; negative -> high cell = -1
-        STA     TOS,X
+        LDA  NOS,X                  ; n
+        BPL  @positive
+        LDA  #MINUS_ONE             ; negative -> high cell = -1
+        STA  TOS,X
         RTS
 @positive:
-        STZ     TOS,X           ; positive -> high cell = 0
+        STZ  TOS,X                  ; positive -> high cell = 0
         RTS
 ENDPUBLIC
 
 PUBLIC  vm_2dup
-        LDA  2,X
-        LDY  0,X
+        LDA  NOS,X
+        LDY  TOS,X
         DEX
         DEX
         DEX
         DEX
-        STA  2,X
-        STY  0,X
+        STA  NOS,X
+        STY  TOS,X
         RTS
 ENDPUBLIC
 
 PUBLIC  vm_2drop
-        INX
-        INX
-        INX
-        INX
+        DROP
+        DROP
         RTS
 ENDPUBLIC
 
@@ -430,7 +471,7 @@ PUBLIC  vm_do_loop_step
 @return:
         DEX
         DEX
-        STA  0,X
+        STA  TOS,X
         RTS
 ENDPUBLIC
 
@@ -441,7 +482,7 @@ PUBLIC  vm_i
         LDA  3,S                    ; index from return stack
         DEX
         DEX
-        STA  0,X
+        STA  TOS,X
         RTS
 ENDPUBLIC
 
@@ -454,7 +495,7 @@ PUBLIC  vm_j
         LDX  vm_sp_shadow
         DEX
         DEX
-        STA  0,X
+        STA  TOS,X
         STX  vm_sp_shadow
         RTS
 ENDPUBLIC
@@ -465,7 +506,7 @@ ENDPUBLIC
 ; ---------------------------------------------------------------------------
 
 PUBLIC  vm_emit
-        LDA  0,X
+        LDA  TOS,X
         INX
         INX
         STX  vm_sp_shadow
@@ -480,12 +521,12 @@ PUBLIC  vm_key
         LDX  vm_sp_shadow
         DEX
         DEX
-        STA  0,X
+        STA  TOS,X
         RTS
 ENDPUBLIC
 
 PUBLIC  vm_cputs
-        LDA  0,X
+        LDA  TOS,X
         INX
         INX
         TAY                         ; Y = address
@@ -504,10 +545,10 @@ PUBLIC  vm_cputs
 ENDPUBLIC
 
 PUBLIC  vm_type
-        LDY  0,X                    ; count
+        LDY  TOS,X                  ; count
         INX
         INX
-        LDA  0,X                    ; addr
+        LDA  TOS,X                  ; addr
         INX
         INX
         PHX                         ; save P-stack pointer
@@ -543,7 +584,7 @@ PUBLIC  vm_space
 ENDPUBLIC
 
 PUBLIC  vm_spaces
-        LDA  0,X
+        LDA  TOS,X
         INX
         INX
         TAY
@@ -577,13 +618,13 @@ PUBLIC  vm_udot
 ENDPUBLIC
 
 .proc   print_sdec
-        LDA  0,X
+        LDA  TOS,X
         CMP  #0
         BPL  vm_udot
         ; Negative: negate value, then print minus sign
         EOR  #UINT_MAX
         INC  A
-        STA  0,X
+        STA  TOS,X
         LDA  #'-'
         JSR  platform_putc
 .endproc
@@ -651,7 +692,7 @@ PUBLIC  vm_dots
         BEQ  @ds_done           ; no items on stack, we're done.
         DEX
         DEX
-        STA  0,X
+        STA  TOS,X
         LDA  #'<'               ; print "<depth> "
         JSR  platform_putc
         JSR  print_udec
@@ -659,7 +700,7 @@ PUBLIC  vm_dots
         JSR  platform_putc
         LDA  #' '
         JSR  platform_putc
-        LDX  #PSTACK_INIT
+        LDX  #PSP_INIT
 @print_loop:
         TXA                     ; Print stack items bottom to top.
         CMP  1,S
@@ -679,7 +720,7 @@ calc_depth:
         EOR  #UINT_MAX          ; Two's complement
         INC  A
         CLC
-        ADC  #PSTACK_INIT       ; PSP_INIT - result / 2
+        ADC  #PSP_INIT          ; PSP_INIT - result / 2
         CMP  #INT_MIN           ; if bit 15 is set, carry = 1
         ROR  A                  ; Divide by 2 (cells)
         RTS
@@ -689,7 +730,7 @@ ENDPUBLIC
 ; Memory operations
 ; ---------------------------------------------------------------------------
 PUBLIC  vm_allot
-        LDA  0,X
+        LDA  TOS,X
         INX
         INX
         CLC
@@ -699,17 +740,17 @@ PUBLIC  vm_allot
 ENDPUBLIC
 
 PUBLIC  vm_cells
-        LDA  0,X
+        LDA  TOS,X
         ASL  A
-        STA  0,X
+        STA  TOS,X
         RTS
 ENDPUBLIC
 
 PUBLIC  vm_cellplus
-        LDA  0,X
+        LDA  TOS,X
         INC  A
         INC  A
-        STA  0,X
+        STA  TOS,X
         RTS
 ENDPUBLIC
 
@@ -717,38 +758,38 @@ PUBLIC  vm_here
         DEX
         DEX
         LDA  vm_here_ptr
-        STA  0,X
+        STA  TOS,X
         RTS
 ENDPUBLIC
 
 PUBLIC  vm_count
-        LDA  0,X                    ; addr
+        LDA  TOS,X                  ; addr
         TAY
         SEP  #$20
         LDA  0,Y                    ; length byte (8-bit)
         REP  #$20
-        LDA  0,X
+        LDA  TOS,X
         INY
-        STY  0,X                    ; addr+1 (NOS)
+        STY  TOS,X                  ; addr+1 (NOS)
         DEX
         DEX
         ; A holds length byte, but junk in high byte.
         AND  #$00FF                 ; mask off junk.
-        STA  0,X                    ; len (TOS)
+        STA  TOS,X                  ; len (TOS)
         RTS
 ENDPUBLIC
 
 PUBLIC  vm_move
         SRCPTR = 1
         DSTPTR = 3
-        LDY  0,X                    ; u
+        LDY  TOS,X                  ; u
         INX
         INX
-        LDA  0,X                    ; dst
+        LDA  TOS,X                  ; dst
         INX
         INX
         PHA
-        LDA  0,X                    ; src
+        LDA  TOS,X                  ; src
         INX
         INX
         PHA
@@ -773,14 +814,14 @@ ENDPUBLIC
 PUBLIC  vm_fill
         LOC_DSTPTR = 1
         LOC_BYTE = 3
-        LDA  0,X                    ; pop fill byte to LOC_BYTE
+        LDA  TOS,X                  ; pop fill byte to LOC_BYTE
         INX
         INX
         PHA
-        LDY  0,X                    ; pop u (byte count) to Y
+        LDY  TOS,X                  ; pop u (byte count) to Y
         INX
         INX
-        LDA  0,X                    ; pop addr to LOC_DTSPTR
+        LDA  TOS,X                  ; pop addr to LOC_DTSPTR
         INX
         INX
         PHA

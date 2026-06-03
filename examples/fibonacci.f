@@ -5,12 +5,6 @@
 
 15 constant max-fib
 
-\ Print a greeting
-: greet
-    ." Hello from forthc!"
-    cr
-;
-
 \ Fibonacci — iterative version
 \ ( n -- fib(n) )
 : fib
