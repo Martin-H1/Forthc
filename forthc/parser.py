@@ -26,7 +26,7 @@ Grammar (informal):
 
 from .tokenizer import Token, TType, TokenizeError
 from .ast_nodes import (
-    Program, ConstantDef, VariableDef, WordDef,
+    Program, CreateDef, ConstantDef, VariableDef, WordDef,
     OriginDirective, SegmentDirective, MainDirective,
     NumberLit, StringLit, PrintString, WordCall,
     IfThen, BeginUntil, BeginWhileRepeat, DoLoop,
@@ -93,6 +93,21 @@ class Parser:
                 raise ParseError(
                     "Bare number at top level must be followed by 'constant'",
                     num_tok)
+
+        if tok.type == TType.CREATE:
+            self._advance()
+            name_tok = self._expect(TType.WORD)
+            size = 0
+            if self._match(TType.NUMBER):
+                num_tok = self._advance()
+                if not self._match(TType.ALLOT):
+                    raise ParseError(
+                        "Expected 'allot' after number in 'create' definition",
+                        self._peek())
+                self._advance()   # consume 'allot'
+                size = num_tok.value
+            return CreateDef(name=name_tok.value, size=size,
+                             line=tok.line, col=tok.col)
 
         if tok.type == TType.VARIABLE:
             self._advance()

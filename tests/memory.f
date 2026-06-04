@@ -1,5 +1,7 @@
 .main test-memory
 
+create buf 10 allot
+
 : test-memory
     cr ." memory test: " cr
     test-move

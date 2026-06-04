@@ -41,7 +41,7 @@ import io
 import re
 
 from .ast_nodes import (
-    Program, ConstantDef, VariableDef, WordDef,
+    Program, CreateDef, ConstantDef, VariableDef, WordDef,
     OriginDirective, SegmentDirective, MainDirective,
     NumberLit, StringLit, PrintString, WordCall,
     IfThen, BeginUntil, BeginWhileRepeat, DoLoop,
@@ -126,6 +126,7 @@ INLINE_OPS: dict[str, str] = {
 
 # Words that require a call to a runtime routine.
 RUNTIME_CALLS: dict[str, str] = {
+    'base':   'vm_base_addr',
     'um*':    'vm_umstar',
     'um/mod': 'vm_umslashmod',
     '/mod':   'vm_slashmod',
@@ -258,7 +259,9 @@ class CodeGenerator:
     # ------------------------------------------------------------------
 
     def _top_def(self, node: ASTNode):
-        if isinstance(node, ConstantDef):
+        if isinstance(node, CreateDef):
+            self._gen_create(node)
+        elif isinstance(node, ConstantDef):
             self._gen_constant(node)
         elif isinstance(node, VariableDef):
             self._gen_variable(node)
@@ -272,6 +275,15 @@ class CodeGenerator:
             self._gen_main(node)
         else:
             raise CodeGenError(f"Unknown top-level node {type(node).__name__}", node)
+
+    def _gen_create(self, node: CreateDef):
+        sym = _mangle(node.name)
+        self._emit(f'; create {node.name}')
+        self._emit_label(sym)
+        if node.size > 0:
+            self._emit(f'    .res {node.size}')
+        self._emit()
+        self._variables.add(node.name)
 
     def _gen_constant(self, node: ConstantDef):
         sym = _mangle(node.name)

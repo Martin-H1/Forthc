@@ -21,6 +21,14 @@ class ASTNode:
 # ---------------------------------------------------------------------------
 
 @dataclass
+class CreateDef:
+    """create foo  allot 14 →  foo: .res 14"""
+    name:  str
+    size:  int        # number of bytes to allot (0 = no allot clause)
+    line:  int = 0
+    col:   int = 0
+
+@dataclass
 class ConstantDef(ASTNode):
     """15 constant foo  →  foo = 15"""
     name:  str = ''

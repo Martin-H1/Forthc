@@ -18,6 +18,8 @@ class TType(Enum):
     STRING      = auto()   # ." or S" payload
     COLON       = auto()   # :
     SEMICOLON   = auto()   # ;
+    ALLOT       = auto()   # allot
+    CREATE      = auto()   # create
     CONSTANT    = auto()   # constant
     VARIABLE    = auto()   # variable
     IF          = auto()   # if
@@ -40,6 +42,8 @@ class TType(Enum):
 KEYWORD_MAP = {
     ':':        TType.COLON,
     ';':        TType.SEMICOLON,
+    'allot':    TType.ALLOT,
+    'create':   TType.CREATE,
     'constant': TType.CONSTANT,
     'variable': TType.VARIABLE,
     'if':       TType.IF,
