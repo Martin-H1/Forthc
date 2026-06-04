@@ -1007,7 +1007,6 @@ PUBLIC  vm_move
         LDA     (SRCPTR,S),Y
         STA     (DSTPTR,S),Y
         ON16MEM
-        INX
         INC  vm_tmp2
         DEY
         BRA  @loop
