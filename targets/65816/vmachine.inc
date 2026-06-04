@@ -60,6 +60,7 @@ NOS             = 2
 ; Skipped when assembling vmachine.s itself (which exports them).
 ; ---------------------------------------------------------------------------
 .ifndef __vmachine_s__
+        .import vm_base_addr
         .import vm_star
         .import vm_umstar
         .import vm_umslashmod
@@ -402,4 +403,6 @@ NOS             = 2
         LDX  #PSP_INIT              ; initialise parameter stack pointer
         LDA  #HERE_INIT
         STA  vm_here_ptr
+        LDA  #10
+        STA  vm_base
 .endmacro

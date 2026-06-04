@@ -2,6 +2,12 @@
 
 .main main
 
+: base-test
+    base @ ." base @ u. (expect 10) = " u. cr
+    16 base ! 255 ." 16 base ! 255 u. (expect FF) = " u. cr
+    10 base ! 255 ." 10 base ! 255 u. (expect 255) = " u. cr
+;
+
 : urinary-test
       0 invert ." 0 invert (expect -1) = " . cr
      11 1+     ." 11 1+ (expect 12) = "    . cr
@@ -63,6 +69,7 @@
 
 : main
     cr
+    base-test
     urinary-test
     plus-test
     minus-test

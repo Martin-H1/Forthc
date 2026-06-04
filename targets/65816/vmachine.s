@@ -71,6 +71,14 @@ PUBLIC  MAIN
         RTL
 ENDPUBLIC
 
+PUBLIC  vm_base_addr                ; ( -- addr )  push address of BASE
+        LDA  #vm_base
+        DEX
+        DEX
+        STA  0,X
+        RTS
+ENDPUBLIC
+
 ; ---------------------------------------------------------------------------
 ; vm_star  —  ( n1 n2 -- n3 )   16×16 → 16 multiply
 ; ---------------------------------------------------------------------------
@@ -844,8 +852,8 @@ ENDPUBLIC
 
         PHD                     ; save direct page register
         TOR                     ; Establish working area
-        LDY  #10                ; Assume 10 until we add base support.
-        PHY                     ; BASE (10 or 16)
+        LDY  vm_base            ; current numeric base
+        PHY                     ; BASE
         TSC                     ; Xfer RSP to direct page reg
         TCD                     ; stack local space is now direct page.
 
@@ -1051,6 +1059,7 @@ ENDPUBLIC
 .segment "ZEROPAGE"
 vm_sp_shadow:   .res 2              ; shadow of X (P-stack pointer)
 vm_here_ptr:    .res 2              ; HERE pointer for bump allocator
+vm_base:        .res 2              ; numeric base (default 10)
 vm_scratch0:    .res 2              ; general purpose scratch
 vm_scratch1:    .res 2              ; general purpose scratch
 vm_tmp1:        .res 2              ; scratch
