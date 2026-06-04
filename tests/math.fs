@@ -1,4 +1,4 @@
-\ math.f - Arithmetic regression tests
+\ math.fs - Arithmetic regression tests
 
 .main main
 

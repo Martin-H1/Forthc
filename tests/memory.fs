@@ -1,3 +1,5 @@
+\ memory.fs - memory access regresssion tests
+
 .main test-memory
 
 create buf 10 allot

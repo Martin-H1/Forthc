@@ -1,3 +1,5 @@
+\ logic.fs - logical operator regression tests.
+
 .main logic-test
 
 : logic-test

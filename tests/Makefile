@@ -33,7 +33,7 @@ bin/debug/output.bin: obj/debug/vmachine.o obj/debug/output.o
 bin/debug/stack.bin: obj/debug/vmachine.o obj/debug/stack.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/stack.bin -m bin/debug/stack.map $^
 
-%.s : %.f
+%.s : %.fs
 	$(PYTHON) "..\__main__.py" $<
 
 %.srec : %.bin

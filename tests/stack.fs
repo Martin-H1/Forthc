@@ -1,3 +1,5 @@
+\ stack.fs - stack function regresssion tests.
+
 .main stack-test
 
 : stack-test

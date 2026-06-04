@@ -1,3 +1,5 @@
+\ output.fs - output to console regression tests
+
 .main output-test
 
 : output-test
