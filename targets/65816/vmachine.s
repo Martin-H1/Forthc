@@ -444,6 +444,38 @@ PUBLIC  vm_rshift
 ENDPUBLIC
 
 ;------------------------------------------------------------------------------
+; = ( a b -- flag ) equality
+;------------------------------------------------------------------------------
+PUBLIC  vm_eq
+        LDA  TOS,X
+        CMP  NOS,X                  ; sets Z flag, no overflow possible for =
+        BEQ  @true
+        LDA  #FORTH_FALSE
+        BRA  @return
+@true:  LDA  #FORTH_TRUE
+@return:
+        DROP
+        STA  TOS,X
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; <> ( a b -- flag ) inequality
+;------------------------------------------------------------------------------
+PUBLIC  vm_neq
+        LDA  TOS,X
+        CMP  NOS,X
+        BNE  @true
+        LDA  #FORTH_FALSE
+        BRA  @return
+@true:  LDA  #FORTH_TRUE
+@return:
+        DROP
+        STA  TOS,X
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
 ; < ( a b -- flag ) signed
 ;------------------------------------------------------------------------------
 PUBLIC  vm_lt
@@ -484,6 +516,38 @@ PUBLIC  vm_gt
 @return:
         DROP                        ; Drop b
         STA  TOS,X                  ; Set TOS to result
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; U< ( u1 u2 -- flag ) unsigned less than
+;------------------------------------------------------------------------------
+PUBLIC  vm_ult
+        LDA  NOS,X                  ; u1
+        CMP  TOS,X                  ; u1 - u2 (unsigned)
+        BCC  @true                  ; Carry clear = u1 < u2
+        LDA  #FORTH_FALSE
+        BRA  @return
+@true:  LDA  #FORTH_TRUE
+@return:
+        DROP
+        STA  TOS,X
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; U> ( u1 u2 -- flag ) unsigned greater than
+;------------------------------------------------------------------------------
+PUBLIC  vm_ugt
+        LDA  TOS,X                  ; u2
+        CMP  NOS,X                  ; u2 - u1 (unsigned)
+        BCC  @true
+        LDA  #FORTH_FALSE
+        BRA  @return
+@true:  LDA  #FORTH_TRUE
+@return:
+        DROP
+        STA  TOS,X
         RTS
 ENDPUBLIC
 

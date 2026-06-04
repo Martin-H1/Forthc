@@ -76,6 +76,10 @@ NOS             = 2
         .import vm_rshift
         .import vm_lt
         .import vm_gt
+        .import vm_eq
+        .import vm_neq
+        .import vm_ult
+        .import vm_ugt
         .import vm_zeq
         .import vm_zne
         .import vm_zlt
@@ -359,14 +363,7 @@ NOS             = 2
 ; EQ  =  — ( n1 n2 -- flag )   flag = $FFFF if equal, 0 otherwise
 ; ---------------------------------------------------------------------------
 .macro  EQ
-        LDA  TOS,X                  ; n2
-        DROP
-        CMP  TOS,X                  ; compare to n1
-        BEQ  :+
-        LDA  #FORTH_FALSE
-        BRA  :++
-:       LDA  #FORTH_TRUE
-:       STA  TOS,X
+        JSR  vm_eq
 .endmacro
 
 ; ---------------------------------------------------------------------------
