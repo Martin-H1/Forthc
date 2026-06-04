@@ -435,8 +435,7 @@ class CodeGenerator:
         self._gen_body(node.test, str_pool)
         self._emit_instr(f'ZBRANCH {end_lbl}', 'while: exit if zero (false)')
         self._gen_body(node.body, str_pool)
-        self._emit_instr(f'LIT 0',             'repeat: unconditional jump back')
-        self._emit_instr(f'ZBRANCH {top_lbl}', 'repeat: loop back')
+        self._emit_instr(f'BRANCH {top_lbl}', 'repeat: unconditional jump back')
         self._emit_label(end_lbl)
 
     def _gen_do_loop(self, node: DoLoop, str_pool: list):
