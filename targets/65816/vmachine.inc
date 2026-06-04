@@ -61,9 +61,13 @@ NOS             = 2
 ; ---------------------------------------------------------------------------
 .ifndef __vmachine_s__
         .import vm_star
+        .import vm_umstar
+        .import vm_umslashmod
+        .import vm_slashmod
         .import vm_slash
         .import vm_mod
-        .import vm_slashmod
+        .import vm_smrem
+        .import vm_fmmod
         .import vm_and
         .import vm_or
         .import vm_xor

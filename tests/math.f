@@ -13,42 +13,52 @@
 ;
 
 : plus-test
-    ." 597 + 4133 (expect 4730) = "
-    597  4133 + . cr
+    597 4133 + ." 597 + 4133 (expect 4730) = " . cr
 ;
 
 : minus-test
-    ." 4133 - 597 (expect 3536) = "
-    4133 597 - . cr
+    4133 597 - ." 4133 - 597 (expect 3536) = " . cr
 ;
 
 : star-test
-    ." 4133 * 7 (expect 28931) = " 4133 7 * . cr
-    ." 4133 * -3 (expect -12399) = " 4133 -3 * . cr
-    ." -3 * -3 (expect 9) = " -3 -3 * . cr
-    ." -3 * 20 (expect -60) = " -3 20 * . cr
+    4133 7 *   ." 4133 * 7 (expect 28931) = " . cr
+    4133 -3 *  ." 4133 * -3 (expect -12399) = " . cr
+    -3 -3 *    ." -3 * -3 (expect 9) = " . cr
+    -3 20 *    ." -3 * 20 (expect -60) = " . cr
 ;
 
-: slash-test
-   ." 4133 / 20 (expect 206) = " 4133 20 / . cr
-   ." 4133 / -3 (expect -1377) = " 4133 -3 / . cr
-   ." -3 / -3 (expect 1) = "  -3 -3 / . cr
-     -3 20 / . cr
-     -3  1 / . cr
+: umstar-test
+    4133  20    um* ." 4133 20 um* (expect 17124 1) = " swap u. u. cr
+    4133  65533 um* ." 4133 65533 um* (expect 53137 4132) = " swap u. u. cr
+    65533 65533 um* ." 65533 65533 um* (expect 9 65530) = " swap u. u. cr
+    65533 20    um* ." 65533 20 um* (expect 65476 19) = " swap u. u. cr
 ;
 
-: mod-test
-   4133 20 MOD . cr
-   4133 -3 MOD . cr
-     -3 -3 MOD . cr
-     -3 20 MOD . cr
+: umslashmod-test
+    1025 0 14 um/mod ." 1025 0 14 um/mod (expect 3 73) = " swap u. u. cr
+    1025 0 0  um/mod ." 1025 0 0 um/mod (expect 1025 -1) = " swap u. . cr
 ;
 
 : slashmod-test
-   4133 20 /MOD . cr
-   4133 -3 /MOD . cr
-     -3 -3 /MOD . cr
-     -3 20 /MOD . cr
+    4133 20 /MOD ." 4133 20 /MOD (expect 13 206) = " swap . . cr
+    4133 -3 /MOD ." 4133 -3 /MOD (expect -1 -1378) = " swap . . cr
+    -3 -3 /MOD   ." -3 -3 /MOD  (expect 0 1) = " swap . . cr
+    -3 20 /MOD   ." -3 20 /MOD (expect 17 -1) = " swap . . cr
+;
+
+: slash-test
+    4133 20 /    ." 4133 / 20 (expect 206) = " . cr
+    4133 -3 /    ." 4133 / -3 (expect -1378) = " . cr
+    -3 -3 /      ." -3 / -3 (expect 1) = " . cr
+    -3 20 /      ." -3 20 / (expect -1) = " . cr
+    -3  1 /      ." -3 1 / (expect -3) = " . cr
+;
+
+: mod-test
+     4133 20 MOD ." 4133 20 MOD (expect 13) = " . cr
+     4133 -3 MOD ." 4133 -3 MOD (expect -1) = " . cr
+     -3 -3 MOD   ." -3 -3 MOD (expect 0) = " . cr
+     -3 20 MOD   ." -3 20 MOD (expect 17) = " . cr
 ;
 
 : main
@@ -57,7 +67,9 @@
     plus-test
     minus-test
     star-test
+    umstar-test
+    umslashmod-test
+    slashmod-test
     slash-test
     mod-test
-    slashmod-test
 ;

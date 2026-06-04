@@ -103,13 +103,166 @@ PUBLIC  vm_star
         RTS
 ENDPUBLIC
 
+;------------------------------------------------------------------------------
+; UM* ( u1 u2 -- ud )   unsigned 16×16 → 32-bit product
+; On exit: NOS = ud_low, TOS = ud_high   (ANS Forth convention)
+;
+; Algorithm: shift-and-add over a 32-bit accumulator.
+;   vm_tmp1     = multiplier   (16-bit, shifted right)
+;   vm_tmp2     = multiplicand low  word (shifted left, carry tracked below)
+;   vm_scratch1 = multiplicand high word (starts 0; receives carry from TMPB)
+;   vm_scratch0 = product low  word (accumulator)
+;   NOS,X slot  = product high word (accumulator, kept on stack)
+;------------------------------------------------------------------------------
+PUBLIC  vm_umstar
+        LDA  TOS,X                  ; u2 → tm_tmp1 (multiplier)
+        STA  vm_tmp1
+        LDA  NOS,X                  ; u1 → vm_tmp2 (multiplicand low)
+        STA  vm_tmp2
+        STZ  vm_scratch1            ; multiplicand high = 0
+        STZ  vm_scratch0            ; product low  = 0
+        STZ  TOS,X                  ; product high = 0  (reuse TOS slot)
+.ifndef UNROLL
+        LDY  #16                    ; 16 iterations
+@loop:
+.else
+        ; Put the contents of an iteration in a macro.
+.macro SHIFTADD32
+.scope
+.endif
+        LSR  vm_tmp1                ; multiplier >>= 1; old LSB → carry
+        BCC  @skip                  ; bit 0 was 0, nothing to add
+
+        ; Add 32-bit multiplicand (vm_scratch1:vm_tmp2) to prod (TOS:vm_scratch0)
+        CLC
+        LDA  vm_scratch0
+        ADC  vm_tmp2                ; product_low  += multiplicand_low
+        STA  vm_scratch0
+        LDA  TOS,X
+        ADC  vm_scratch1            ; product_high += multiplicand_high + c
+        STA  TOS,X
+@skip:
+        ; Shift 32-bit multiplicand left
+        ASL  vm_tmp2                ; multiplicand_low <<= 1
+        ROL  vm_scratch1            ; multiplicand_high <<= 1
+.ifndef UNROLL
+        DEY
+        BNE  @loop
+.else
+.endscope
+.endmacro
+        ; Unroll the loop for performance.
+        SHIFTADD32
+        SHIFTADD32
+        SHIFTADD32
+        SHIFTADD32
+        SHIFTADD32
+        SHIFTADD32
+        SHIFTADD32
+        SHIFTADD32
+        SHIFTADD32
+        SHIFTADD32
+        SHIFTADD32
+        SHIFTADD32
+        SHIFTADD32
+        SHIFTADD32
+        SHIFTADD32
+        SHIFTADD32
+.endif
+        ; Place results on parameter stack:
+        ;   TOS = ud_high, NOS = ud_low
+        LDA  vm_scratch0
+        STA  NOS,X                  ; NOS = low
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; UM/MOD ( ud u -- ur uq ) unsigned 32/16 -> 16 remainder, 16 quotient
+; UNDEFINED if quotient overflows 16 bits (i.e. ud_high >= u)
+; Entry stack: ( ud_low ud_high divisor -- )
+;   TOS,X  = divisor  (u)
+;   NOS,X  = ud_high  (high cell of 32-bit dividend)
+;   PSP2,X = ud_low   (low cell of 32-bit dividend)
+;
+; Exit stack: ( remainder quotient )
+;   TOS,X = quotient
+;   NOS,X = remainder
+; https://forth-standard.org/standard/core/UMDivMOD
+;------------------------------------------------------------------------------
+PUBLIC  vm_umslashmod
+        LDA  TOS,X                  ; load divisor
+        DROP
+        STA  vm_tmp1                ; vm_tmp1 = divisor
+        ; Now: TOS,X = ud_high (remainder register)
+        ;      NOS,X = ud_low  (quotient register)
+.ifndef UNROLL
+        LDY  #16                    ; 16 iterations
+@loop:
+.else
+.macro SHIFTSUB32
+.scope
+.endif
+        ASL  NOS,X                  ; quotient  <<= 1; old bit15 → carry
+        ROL  TOS,X                  ; remainder <<= 1; carry → bit0
+        LDA  TOS,X                  ; current remainder
+        SEC
+        SBC  vm_tmp1                ; remainder - divisor
+        BCC  @restore               ; borrow → remainder < divisor, skip
+        STA  TOS,X                  ; update remainder
+        INC  NOS,X                  ; set quotient LSB
+@restore:
+.ifndef UNROLL
+        DEY
+        BNE  @loop
+.else
+.endscope
+.endmacro
+        ; Unroll the loop for performance.
+        SHIFTSUB32
+        SHIFTSUB32
+        SHIFTSUB32
+        SHIFTSUB32
+        SHIFTSUB32
+        SHIFTSUB32
+        SHIFTSUB32
+        SHIFTSUB32
+        SHIFTSUB32
+        SHIFTSUB32
+        SHIFTSUB32
+        SHIFTSUB32
+        SHIFTSUB32
+        SHIFTSUB32
+        SHIFTSUB32
+        SHIFTSUB32
+.endif
+        ; TOS,X = remainder, NOS,X = quotient
+        ; swap to ANS order TOS=quotient NOS=remainder
+        LDA  TOS,X
+        STA  vm_scratch0
+        LDA  NOS,X
+        STA  TOS,X
+        LDA  vm_scratch0
+        STA  NOS,X
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; /MOD ( n1 n2 -- rem quot )   signed floored division
+;------------------------------------------------------------------------------
+PUBLIC  vm_slashmod
+        JSR  vm_swap                ; ( n2 n1 )
+        JSR  vm_stod                ; ( n2 n1 n1_hi )
+        JSR  vm_rot                 ; ( n1 n1_hi n2 )
+        JSR  vm_fmmod               ; ( rem quot )
+        RTS
+ENDPUBLIC
+
 ; ---------------------------------------------------------------------------
 ; vm_slash  —  ( n1 n2 -- n3 )   signed 16/16 division
 ; ---------------------------------------------------------------------------
 PUBLIC  vm_slash
-        JSR  vm_divmod
-        INX                         ; discard remainder
-        INX
+        JSR  vm_slashmod
+        NIP                         ; discard remainder
         RTS
 ENDPUBLIC
 
@@ -117,46 +270,105 @@ ENDPUBLIC
 ; vm_mod  —  ( n1 n2 -- n3 )   modulo
 ; ---------------------------------------------------------------------------
 PUBLIC  vm_mod
-        JSR  vm_divmod
-        LDA  NOS,X                  ; remainder → TOS
-        INX
-        INX
+        JSR  vm_slashmod
+        DROP                        ; remainder → TOS
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; SM/REM ( d1 n1 -- n2 n3 ) Divide d1 by n1, giving the symmetric quotient n3
+; and the remainder n2. Input and output stack arguments are signed. An
+; ambiguous condition exists if n1 is zero or if the quotient lies outside
+; the range of a single-cell signed integer.
+; https://forth-standard.org/standard/core/SMDivREM
+;------------------------------------------------------------------------------
+PUBLIC  vm_smrem
+        SMREM_N     = 1             ; saved divisor (n)
+        SMREM_DHIGH = 3             ; saved d-high
+        SMREM_SIGN  = 5             ; saved sign indicator (d-high XOR n)
+
+        ; Save sign indicator, d-high, and n
+        LDA  NOS,X                  ; d-high
+        EOR  TOS,X                  ; XOR with n for sign indicator
+        PHA                         ; SMREM_SIGN
+        LDA  NOS,X                  ; d-high
+        PHA                         ; SMREM_DHIGH
+        LDA  TOS,X                  ; n
+        PHA                         ; SMREM_N
+
+        ; Take absolute value of n
+        LDA  TOS,X
+        BPL  @n_pos
+        EOR  #UINT_MAX
+        INC  A
         STA  TOS,X
+@n_pos:
+        ; Take absolute value of 32-bit dividend
+        LDA  NOS,X                  ; d-high
+        BPL  @d_pos
+        LDA  4,X                    ; d-low
+        EOR  #UINT_MAX              ; invert
+        CLC
+        ADC  #1                     ; +1, carry set if result = 0
+        STA  4,X
+        LDA  NOS,X                  ; d-high
+        EOR  #UINT_MAX              ; invert
+        ADC  #0                     ; add carry
+        STA  NOS,X
+@d_pos:
+        JSR  vm_umslashmod          ; ( rem quot )
+
+        ; Apply sign to quotient: sign(d-high XOR n)
+        LDA  SMREM_SIGN,S
+        BPL  @quot_pos
+        LDA  TOS,X
+        BEQ  @quot_pos
+        EOR  #UINT_MAX
+        INC  A
+        STA  TOS,X
+@quot_pos:
+        ; Apply sign to remainder: sign of original d-high
+        LDA  SMREM_DHIGH,S
+        BPL  @rem_pos
+        LDA  NOS,X
+        BEQ  @rem_pos
+        EOR  #UINT_MAX
+        INC  A
+        STA  NOS,X
+@rem_pos:
+        PLA                         ; drop SMREM_N
+        PLA                         ; drop SMREM_DHIGH
+        PLA                         ; drop SMREM_SIGN
         RTS
 ENDPUBLIC
 
-; ---------------------------------------------------------------------------
-; vm_slashmod  —  ( n1 n2 -- rem quot )
-; ---------------------------------------------------------------------------
-PUBLIC  vm_slashmod
-        JMP  vm_divmod
-ENDPUBLIC
-
-; ---------------------------------------------------------------------------
-; vm_divmod  — internal: ( n1 n2 -- rem quot )
-; Uses repeated subtraction (replace with hardware-accelerated version
-; for production use).
-; ---------------------------------------------------------------------------
-.proc   vm_divmod
-        LDA  TOS,X                  ; divisor
-        BNE  @ok
-        STZ  TOS,X                  ; division by zero — push 0 0
-        STZ  NOS,X
-        RTS
-@ok:
-        LDA  NOS,X                  ; dividend n1
-        LDY  #0                     ; quotient
-@loop:
-        CMP  TOS,X                  ; dividend >= divisor?
-        BCC  @done
-        SEC
-        SBC  TOS,X                  ; dividend -= divisor
-        INY
-        BRA  @loop
+;------------------------------------------------------------------------------
+; FM/MOD ( d1 n1 -- n2 n3 ) Divide d1 by n1, giving the floored quotient n3 and
+; the remainder n2. Input and output stack arguments are signed. An ambiguous
+; condition exists if n1 is zero or if the quotient lies outside the range of
+; a single-cell signed integer.
+; https://forth-standard.org/standard/core/FMDivMOD
+;------------------------------------------------------------------------------
+PUBLIC  vm_fmmod
+        LDA  NOS,X                  ; d-high
+        EOR  TOS,X                  ; sign indicator
+        PHA                         ; save sign indicator
+        LDA  TOS,X                  ; n
+        PHA                         ; save n
+        JSR  vm_smrem               ; ( rem quot )
+        ; Floor correction
+        LDA  3,S                    ; sign indicator
+        BPL  @done                  ; same signs → no correction
+        LDA  NOS,X                  ; remainder
+        BEQ  @done                  ; zero → no correction
+        DEC  TOS,X                  ; quot -= 1
+        LDA  NOS,X
+        CLC
+        ADC  1,S                    ; rem += n
+        STA  NOS,X
 @done:
-        STA  NOS,X                  ; remainder (NOS)
-        TYA
-        STA  TOS,X                  ; quotient (TOS)
+        PLA                         ; drop n
+        PLA                         ; drop sign indicator
         RTS
 ENDPUBLIC
 

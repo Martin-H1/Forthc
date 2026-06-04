@@ -126,9 +126,13 @@ INLINE_OPS: dict[str, str] = {
 
 # Words that require a call to a runtime routine.
 RUNTIME_CALLS: dict[str, str] = {
+    'um*':    'vm_umstar',
+    'um/mod': 'vm_umslashmod',
+    '/mod':   'vm_slashmod',
     '/':      'vm_slash',
     'mod':    'vm_mod',
-    '/mod':   'vm_slashmod',
+    'sm/rem': 'vm_smrem',
+    'fm/mod': 'vm_fmmod',
     'and':    'vm_and',
     'or':     'vm_or',
     'xor':    'vm_xor',
