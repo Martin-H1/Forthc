@@ -2,22 +2,29 @@
 
 .main test-memory
 
-create buf 10 allot
+create buf 32 allot
+
+variable foo
 
 : test-memory
     cr ." memory test: " cr
     test-move
     test-fill
+    test-store-fetch
     ." done"
     cr
 ;
 
 : test-move
-    S" This text was moved!" dup >r $0600 swap move
-    $600 r> type cr
+    S" This text was moved!" dup >r buf swap move
+    buf r> type cr
 ;
 
 : test-fill
-    $600 10 44 fill
-    ." '" $600 10 type ." '" cr
+    buf 10 44 fill
+    ." '" buf 10 type ." '" cr
+;
+
+: test-store-fetch
+    25 foo ! foo @ . cr
 ;
