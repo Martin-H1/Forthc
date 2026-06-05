@@ -120,7 +120,6 @@ PSP5            = CELL_SIZE * 5
         .import vm_dmin
         .import vm_ddot
         .import vm_do_loop_step
-        .import vm_i
         .import vm_j
         .import vm_emit
         .import vm_key
@@ -228,6 +227,16 @@ PSP5            = CELL_SIZE * 5
 ; ---------------------------------------------------------------------------
 .macro  RFROM
         PLA
+        DEX
+        DEX
+        STA  TOS,X
+.endmacro
+
+; ---------------------------------------------------------------------------
+; RTOS R@  — ( -- n ) [R: n -- n ]
+; ---------------------------------------------------------------------------
+.macro  RTOS
+        LDA  1,S                    ; TOS from return stack
         DEX
         DEX
         STA  TOS,X
