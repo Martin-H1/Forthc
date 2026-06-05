@@ -84,6 +84,8 @@ PSP5            = CELL_SIZE * 5
         .import vm_neq
         .import vm_ult
         .import vm_ugt
+        .import vm_ule
+        .import vm_uge
         .import vm_zeq
         .import vm_zne
         .import vm_zlt

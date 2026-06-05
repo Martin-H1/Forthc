@@ -40,5 +40,24 @@
     32 32 <> ." 32 32 <> (expect 0) = " . cr
     42 32 <> ." 42 32 <> (expect -1) = " . cr
 
+    ule-uge-test
+
     ." Logic test exit" cr
+;
+
+: ule-uge-test
+    cr ." u<= u>= test" cr
+
+    ." 3 5 u<= (expect true/-1)  = " 3 5 u<= . cr
+    ." 5 5 u<= (expect true/-1)  = " 5 5 u<= . cr
+    ." 5 3 u<= (expect false/0)  = " 5 3 u<= . cr
+
+    ." 5 3 u>= (expect true/-1)  = " 5 3 u>= . cr
+    ." 5 5 u>= (expect true/-1)  = " 5 5 u>= . cr
+    ." 3 5 u>= (expect false/0)  = " 3 5 u>= . cr
+
+    \ Unsigned boundary: $FFFF is largest unsigned, 0 is smallest
+    ." $FFFF 0 u>= (expect true/-1)  = " $FFFF 0 u>= . cr
+    ." 0 $FFFF u<= (expect true/-1)  = " 0 $FFFF u<= . cr
+    ." 0 $FFFF u>= (expect false/0)  = " 0 $FFFF u>= . cr
 ;

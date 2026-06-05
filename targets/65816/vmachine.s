@@ -552,6 +552,39 @@ PUBLIC  vm_ugt
 ENDPUBLIC
 
 ;------------------------------------------------------------------------------
+; U<= ( u1 u2 -- flag ) unsigned less-than-or-equal
+;------------------------------------------------------------------------------
+PUBLIC  vm_ule
+        LDA  NOS,X                  ; u1
+        CMP  TOS,X                  ; sets carry and Z
+        BEQ  @true                  ; equal counts as <=
+        BCC  @true                  ; u1 < u2
+        LDA  #FORTH_FALSE
+        BRA  @return
+@true:  LDA  #FORTH_TRUE
+@return:
+        DROP
+        STA  TOS,X
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; U>= ( u1 u2 -- flag ) unsigned greater-than-or-equal
+;------------------------------------------------------------------------------
+PUBLIC  vm_uge
+        LDA  NOS,X                  ; u1
+        CMP  TOS,X                  ; sets carry
+        BCS  @true                  ; carry set means u1 >= u2
+        LDA  #FORTH_FALSE
+        BRA  @return
+@true:  LDA  #FORTH_TRUE
+@return:
+        DROP
+        STA  TOS,X
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
 ; 0= ( a -- flag )
 ;------------------------------------------------------------------------------
 PUBLIC  vm_zeq

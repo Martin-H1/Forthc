@@ -146,6 +146,8 @@ RUNTIME_CALLS: dict[str, str] = {
     '>':      'vm_gt',
     'u<':     'vm_ult',
     'u>':     'vm_ugt',
+    'u<=':    'vm_ule',
+    'u>=':    'vm_uge',
     '0=':     'vm_zeq',
     '0<>':    'vm_zne',
     '0<':     'vm_zlt',
