@@ -51,9 +51,13 @@ UINT_MAX        = $FFFF
 PSP_INIT        = $02FF             ; empty stack: X starts here
 HERE_INIT       = $0600             ; Here starts on page 6.
 
-; Parameter stack offsets
+; Parameter stack offsets (relative to X = PSP)
 TOS             = 0
-NOS             = 2
+NOS             = CELL_SIZE
+PSP2            = CELL_SIZE * 2
+PSP3            = CELL_SIZE * 3
+PSP4            = CELL_SIZE * 4
+PSP5            = CELL_SIZE * 5
 
 ; ---------------------------------------------------------------------------
 ; Conditionally import virtual machine runtime functions.
@@ -92,8 +96,29 @@ NOS             = 2
         .import vm_mrot
         .import vm_roll
         .import vm_stod
+        .import vm_2fetch
+        .import vm_2store
         .import vm_2dup
         .import vm_2drop
+        .import vm_2swap
+        .import vm_2over
+        .import vm_2rot
+        .import vm_stod
+        .import vm_dplus
+        .import vm_dminus
+        .import vm_dabs
+        .import vm_d2star
+        .import vm_d2slash
+        .import vm_dtos
+        .import vm_dnegate
+        .import vm_deq
+        .import vm_dzeq
+        .import vm_dzlt
+        .import vm_dult
+        .import vm_dlt
+        .import vm_dmax
+        .import vm_dmin
+        .import vm_ddot
         .import vm_do_loop_step
         .import vm_i
         .import vm_j
