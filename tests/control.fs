@@ -11,6 +11,7 @@
     do-loop-test
     begin-until-test
     begin-while-test
+    plusloop-test
     ." Control structures test exit" cr
 ;
 
@@ -42,4 +43,23 @@
         1- dup .
     repeat
     cr ." done" cr
+;
+
+: plusloop-test
+    cr ." +loop test" cr
+    \ Basic positive step
+    ." Count by 2 (expect 0 2 4 6 8) = "
+    10 0 do i . 2 +loop cr
+
+    \ Step larger than 1 that divides evenly
+    ." Count by 3 (expect 0 3 6 9) = "
+    12 0 do i . 3 +loop cr
+
+    \ Step of 1 should behave like regular loop
+    ." Count by 1 (expect 0 1 2 3 4) = "
+    5 0 do i . 1 +loop cr
+
+    \ Non-zero start index
+    ." 5 to 9 by 2 (expect 5 7 9) = "
+    11 5 do i . 2 +loop cr
 ;
