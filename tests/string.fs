@@ -16,7 +16,7 @@ create buf 20 allot
 
     \ Use count to convert it to addr+1 len
     ." buf dup count (expect addr addr+1 len and 1234567890) = " cr
-    buf dup count .s type cr clear
+    buf dup count .s type cr clear \ clear discards original buf addr
 
     ." String test exit." cr
 ;
