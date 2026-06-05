@@ -3,7 +3,7 @@
 .main stack-test
 
 : stack-test
-    ." Stack test enter" cr
+    cr ." Stack test enter" cr
     0 dup ." Dup test (expect 0 0) = " .s cr
     ?dup  ." ?Dup test (expect 0 0) = " .s cr
     drop drop ." Drop test expect empty stack " .s cr
@@ -18,5 +18,6 @@
     clear 1 2 3 2 pick ." Pick test (expect 1 2 3 1) = " .s cr
     clear 1 2 3 4 5 3 roll ." 3 Roll test (expect 1 3 4 5 2) = " .s cr
     clear 1 >r r> ." >r r> test (expect 1) = " .s cr
+    clear 1 2 3 4 5 ." 1 2 3 4 5 depth (expect 5) = " . cr clear
     ." Stack test exit" cr
 ;

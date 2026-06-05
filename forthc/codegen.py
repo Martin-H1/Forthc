@@ -173,6 +173,7 @@ RUNTIME_CALLS: dict[str, str] = {
     'count':  'vm_count',
     'move':   'vm_move',
     'fill':   'vm_fill',
+    'depth':  'vm_depth',
     '.s':     'vm_dots',
     'tuck':   'vm_tuck',
     's>d':    'vm_stod',
