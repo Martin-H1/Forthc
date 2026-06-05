@@ -26,8 +26,9 @@
     0 0= ." 0 0= test (expect -1) = " . cr
     1 0= ." 1 0= test (expect 0) = " . cr
 
-    1 0<> ." 1 0<> test (expect 0) = " . cr
-    0 0<> ." 0 0<> test (expect -1) = " . cr
+    1 0<> ." 1 0<> test (expect -1) = " . cr
+    0 0<> ." 0 0<> test (expect 0) = " . cr
+
     -1 0< ." -1 0< test (expect -1) = " . cr
     1 0<  ." 1 0< test (expect 0) = " . cr
     -1 0> ." -1 0> test (expect 0) = " . cr
