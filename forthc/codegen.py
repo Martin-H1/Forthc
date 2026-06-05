@@ -154,8 +154,13 @@ RUNTIME_CALLS: dict[str, str] = {
     'rot':    'vm_rot',
     '-rot':   'vm_mrot',
     'roll':   'vm_roll',
+    '2@':     'vm_2fetch',
+    '2!':     'vm_2store',
     '2dup':   'vm_2dup',
     '2drop':  'vm_2drop',
+    '2swap':  'vm_2swap',
+    '2over':  'vm_2over',
+    '2rot':   'vm_2rot',
     'i':      'vm_i',
     'j':      'vm_j',
     'allot':  'vm_allot',
@@ -168,6 +173,21 @@ RUNTIME_CALLS: dict[str, str] = {
     '.s':     'vm_dots',
     'tuck':   'vm_tuck',
     's>d':    'vm_stod',
+    'd+':     'vm_dplus',
+    'd-':     'vm_dminus',
+    'dabs':   'vm_dabs',
+    'd2*':    'vm_d2star',
+    'd2/':    'vm_d2slash',
+    'd>s':    'vm_dtos',
+    'dnegate': 'vm_dnegate',
+    'd=':     'vm_deq',
+    'd0=':    'vm_dzeq',
+    'd0<':    'vm_dzlt',
+    'du<':    'vm_dult',
+    'd<':     'vm_dlt',
+    'dmax':   'vm_dmax',
+    'dmin':   'vm_dmin',
+    'd.':     'vm_ddot',
     'cr':     'vm_cr',
     'space':  'vm_space',
     'spaces': 'vm_spaces',
@@ -193,6 +213,7 @@ class CodeGenerator:
     out:          TextIO = field(default_factory=io.StringIO)
     _label_count: int    = field(default=0, init=False)
     _constants:   dict   = field(default_factory=dict, init=False)
+    _creates:     set    = field(default_factory=set, init=False)
     _variables:   set    = field(default_factory=set, init=False)
     _words:       set    = field(default_factory=set, init=False)
     _str_count:   int    = field(default=0, init=False)
@@ -281,12 +302,15 @@ class CodeGenerator:
 
     def _gen_create(self, node: CreateDef):
         sym = _mangle(node.name)
-        self._emit(f'; create {node.name}')
+
+        # self._emit(f'; create {node.name}')
+        comment = f'create {node.name}' + (f' {node.size} allot' if node.size else '')
+        self._emit(f'; {comment}')
         self._emit_label(sym)
         if node.size > 0:
             self._emit(f'    .res {node.size}')
         self._emit()
-        self._variables.add(node.name)
+        self._creates.add(node.name)
 
     def _gen_constant(self, node: ConstantDef):
         sym = _mangle(node.name)
@@ -397,7 +421,13 @@ class CodeGenerator:
             self._emit_instr(f'LIT {val}', f'constant {name} = {val}')
             return
 
-        # Known user-defined word or variable — mangle the name
+        # Variable or create — push its address
+        if name in self._variables or name in self._creates:
+            sym = _mangle(name)
+            self._emit_instr(f'LIT {sym}', f'address of {name}')
+            return
+
+        # Known user-defined — word mangle the name
         sym = _mangle(name)
         self._emit_instr(f'CALL {sym}', f'call {name}')
 
