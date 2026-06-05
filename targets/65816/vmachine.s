@@ -314,11 +314,11 @@ PUBLIC  vm_smrem
         ; Take absolute value of 32-bit dividend
         LDA  NOS,X                  ; d-high
         BPL  @d_pos
-        LDA  4,X                    ; d-low
+        LDA  PSP2,X                 ; d-low
         EOR  #UINT_MAX              ; invert
         CLC
         ADC  #1                     ; +1, carry set if result = 0
-        STA  4,X
+        STA  PSP2,X
         LDA  NOS,X                  ; d-high
         EOR  #UINT_MAX              ; invert
         ADC  #0                     ; add carry
@@ -616,10 +616,10 @@ ENDPUBLIC
 
 PUBLIC  vm_tuck
         DUP                         ; TOS = b
-        LDA  4,X                    ; a
+        LDA  PSP2,X                 ; a
         STA  NOS,X                  ; NOS = a
         LDA  TOS,X                  ; b
-        STA  4,X                    ; Slot below a = b
+        STA  PSP2,X                 ; Slot below a = b
         RTS
 ENDPUBLIC
 
@@ -645,9 +645,9 @@ PUBLIC  vm_pick                     ; ( xu...x1 x0 u -- xu...x1 x0 xu )
 ENDPUBLIC
 
 PUBLIC  vm_rot
-        LDA  4,X                    ; n1
+        LDA  PSP2,X                 ; n1
         LDY  NOS,X                  ; n2
-        STY  4,X
+        STY  PSP2,X
         LDY  TOS,X                  ; n3
         STY  NOS,X
         STA  TOS,X
@@ -655,9 +655,9 @@ PUBLIC  vm_rot
 ENDPUBLIC
 
 PUBLIC  vm_mrot                     ; ( a b c -- c a b )
-        LDY  4,X                    ; a (bottom)
+        LDY  PSP2,X                 ; a (bottom)
         LDA  TOS,X                  ; b
-        STA  4,X                    ; bottom slot = b
+        STA  PSP2,X                 ; bottom slot = b
         LDA  NOS,X                  ; c (TOS)
         STA  TOS,X                  ; middle slot = c
         STY  NOS,X                  ; TOS = a
@@ -713,6 +713,42 @@ PUBLIC  vm_stod
         RTS
 ENDPUBLIC
 
+;------------------------------------------------------------------------------
+; 2@ ( a-addr -- x1 x2 ) Fetch the cell pair x1 x2 stored at a-addr. x2 is
+; stored at a-addr and x1 at the next consecutive cell. It is equivalent to
+; the sequence DUP CELL+ @ SWAP @.
+; https://forth-standard.org/standard/core/TwoFetch
+;------------------------------------------------------------------------------
+PUBLIC  vm_2fetch
+        LDY  TOS,X                  ; peek addr → Y
+        LDA  CELL_SIZE,Y            ; high cell of d
+        STA  TOS,X
+        LDA  0,Y                    ; low cell of d
+        DEX
+        DEX
+        STA  TOS,X
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; 2! ( x1 x2 a-addr -- ) Store the cell pair x1 x2 at a-addr, with x2 at
+; a-addr and x1 at the next consecutive cell. It is equivalent to the sequence
+; SWAP OVER ! CELL+ !.
+; https://forth-standard.org/standard/core/TwoStore
+;------------------------------------------------------------------------------
+PUBLIC  vm_2store
+        LDY  TOS,X                  ; peek addr → Y
+        LDA  NOS,X                  ; low cell of d
+        STA  0,Y                    ; store at addr
+        LDA  PSP2,X                 ; high cell of d
+        STA  CELL_SIZE,Y            ; store at addr+2
+        CLC
+        TXA
+        ADC  #3*CELL_SIZE           ; drop 3 cells
+        TAX
+        RTS
+ENDPUBLIC
+
 PUBLIC  vm_2dup
         LDA  NOS,X
         LDY  TOS,X
@@ -728,6 +764,290 @@ ENDPUBLIC
 PUBLIC  vm_2drop
         DROP
         DROP
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; 2SWAP ( a b c d -- c d a b )
+;------------------------------------------------------------------------------
+PUBLIC  vm_2swap
+        LDY  TOS,X                  ; d
+        LDA  NOS,X                  ; c
+        STA  vm_scratch1
+        LDA  PSP2,X                 ; b
+        STA  TOS,X
+        LDA  PSP3,X                 ; a
+        STA  NOS,X
+        STY  PSP2,X                 ; d
+        LDA  vm_scratch1            ; c
+        STA  PSP3,X
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; 2OVER ( a b c d -- a b c d a b )
+;------------------------------------------------------------------------------
+PUBLIC  vm_2over
+        LDA  PSP3,X                 ; a
+        DEX
+        DEX
+        STA  TOS,X                  ; Push a (NOS)
+        LDA  PSP3,X                 ; b
+        DEX
+        DEX
+        STA  TOS,X                  ; Push b
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; 2ROT ( d1_lo d1_hi d2_lo d2_hi d3_lo d3_hi -- d2_lo d2_hi d3_lo d3_hi d1_lo d1_hi )
+;------------------------------------------------------------------------------
+PUBLIC  vm_2rot
+        LIT  5
+        JSR  vm_roll                ; ( d1_hi d2_lo d2_hi d3_lo d3_hi d1_lo )
+        LIT  5
+        JSR  vm_roll                ; ( d2_lo d2_hi d3_lo d3_hi d1_lo d1_hi )
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; D+ ( d1_lo d1_hi d2_lo d2_hi -- d3_lo d3_hi )
+; 32-bit addition with carry from low to high cell.
+; Stack: TOS=d2_hi, NOS=d2_lo, NOS2=d1_hi, NOS3=d1_lo
+;------------------------------------------------------------------------------
+PUBLIC  vm_dplus
+        CLC
+        LDA  PSP3,X                 ; d1_lo
+        ADC  NOS,X                  ; + d2_lo
+        STA  PSP3,X                 ; result_lo
+        LDA  PSP2,X                 ; d1_hi
+        ADC  TOS,X                  ; + d2_hi + carry
+        STA  PSP2,X                 ; result_hi
+        DROP
+        DROP                        ; drop d2 cells
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; D- ( d1_lo d1_hi d2_lo d2_hi -- d3_lo d3_hi )
+; 32-bit subtraction with borrow from low to high cell.
+;------------------------------------------------------------------------------
+PUBLIC  vm_dminus
+        SEC
+        LDA  PSP3,X                 ; d1_lo
+        SBC  NOS,X                  ; - d2_lo
+        STA  PSP3,X                 ; result_lo
+        LDA  PSP2,X                 ; d1_hi
+        SBC  TOS,X                  ; - d2_hi - borrow
+        STA  PSP2,X                 ; result_hi
+        DROP
+        DROP                        ; drop d2 cells
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; DABS ( d -- ud ) double absolute value
+;------------------------------------------------------------------------------
+PUBLIC  vm_dabs
+        LDA  TOS,X            	    ; d_hi
+        BPL  @done                  ; done if already positive.
+        JSR  vm_dnegate             ; ( ud_lo ud_hi ) negate if negative
+@done:  RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; D2* ( d -- d*2 ) double shift left.
+; https://forth-standard.org/standard/double/DTwoTimes
+;------------------------------------------------------------------------------
+PUBLIC  vm_d2star
+        JSR  vm_2dup
+        JSR  vm_dplus
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; D2/ ( d -- d/2 ) double arithmetic right shift.
+; https://forth-standard.org/standard/double/DTwoDiv
+;------------------------------------------------------------------------------
+PUBLIC  vm_d2slash
+        DUP
+        LIT  1
+        JSR  vm_and
+        LIT  15
+        JSR  vm_lshift
+        TOR
+        TWOSLASH
+        JSR  vm_swap
+        TWOSLASH
+        RFROM
+        JSR  vm_or
+        JSR  vm_swap
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; D>S ( d -- n ) truncate double to single, discard high cell
+;------------------------------------------------------------------------------
+PUBLIC  vm_dtos
+        DROP
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; DNEGATE ( d -- -d ) negate the double cell in ANS order on stack.
+; https://forth-standard.org/standard/double/DNEGATE
+;------------------------------------------------------------------------------
+PUBLIC  vm_dnegate
+        LDA  TOS,X                  ; high cell
+        EOR  #UINT_MAX              ; invert
+        STA  TOS,X
+        LDA  NOS,X                  ; low cell
+        EOR  #UINT_MAX              ; invert
+        INC  A                      ; +1
+        STA  NOS,X
+        BNE  @done                  ; no carry
+        INC  TOS,X                  ; propagate carry to high cell
+@done:  RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; D= ( d1_lo d1_hi d2_lo d2_hi -- flag )
+; True if both cells equal.
+;------------------------------------------------------------------------------
+PUBLIC  vm_deq
+        LDA  PSP3,X                 ; d1_lo
+        CMP  NOS,X                  ; d2_lo
+        BNE  @false
+        LDA  PSP2,X                 ; d1_hi
+        CMP  TOS,X                  ; d2_hi
+        BNE  @false
+        LDA  #FORTH_TRUE
+        BRA  @return
+@false:
+        LDA  #FORTH_FALSE
+@return:
+	DROP                        ; drop 3 cells
+        DROP
+        DROP
+        STA  TOS,X                  ; Put flag in 4th cell
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; D0= ( ud_lo ud_hi -- flag ) true if double is zero
+; https://forth-standard.org/standard/double/DZeroEqual
+;------------------------------------------------------------------------------
+PUBLIC  vm_dzeq
+        JSR  vm_or
+        JSR  vm_zeq
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; D0< ( ud_lo ud_hi -- flag ) true if double is negative
+; https://forth-standard.org/standard/double/DZeroless
+;------------------------------------------------------------------------------
+PUBLIC  vm_dzlt
+        NIP
+        JSR  vm_zlt
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; DU< ( ud1_lo ud1_hi ud2_lo ud2_hi -- flag )
+; Unsigned 32-bit less than.
+;------------------------------------------------------------------------------
+PUBLIC  vm_dult
+        ; Compare high cells first
+        LDA  PSP2,X                 ; ud1_hi
+        CMP  TOS,X                  ; ud2_hi
+        BCC  @true                  ; ud1_hi < ud2_hi unsigned
+        BNE  @false                 ; ud1_hi > ud2_hi
+        ; High cells equal, compare low cells
+        LDA  PSP3,X                 ; ud1_lo
+        CMP  NOS,X                  ; ud2_lo
+        BCC  @true
+@false:
+        LDA  #FORTH_FALSE
+        BRA  @return
+@true:  LDA  #FORTH_TRUE
+@return:
+        DROP                        ; drop 3 cells
+        DROP
+        DROP
+        STA  TOS,X                  ; Put flag in 4th cell
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; D< ( d1_lo d1_hi d2_lo d2_hi -- flag )
+; Signed 32-bit less than. Compare high cells with overflow-aware signed
+; compare; only if high cells are equal fall through to unsigned low cell
+; compare.
+;------------------------------------------------------------------------------
+PUBLIC  vm_dlt
+        ; Compare high cells (signed)
+        LDA  PSP2,X                 ; d1_hi
+        SEC
+        SBC  TOS,X                  ; d1_hi - d2_hi
+        BEQ  @equal_hi              ; high cells equal, check low
+        BVS  @overflow
+        BMI  @true                  ; negative, no overflow -> d1 < d2
+        BRA  @false
+@overflow:
+        BPL  @true                  ; overflow + positive -> d1 < d2
+        BRA  @false
+@equal_hi:
+        ; High cells equal: unsigned compare of low cells
+        LDA  PSP3,X                 ; d1_lo
+        CMP  NOS,X                  ; d2_lo
+        BCC  @true
+@false:
+        LDA  #FORTH_FALSE
+        BRA  @return
+@true:
+        LDA  #FORTH_TRUE
+@return:
+        DROP                        ; drop 3 cells
+        DROP
+        DROP
+        STA  TOS,X                  ; Put flag in 4th cell
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; DMAX ( d1 d2 -- d ) larger of two doubles
+; https://forth-standard.org/standard/double/DMAX
+;------------------------------------------------------------------------------
+PUBLIC  vm_dmax
+        JSR  vm_2over
+        JSR  vm_2over
+        JSR  vm_dlt
+        ZBRANCH @skip
+        JSR  vm_2swap
+@skip:  JSR  vm_2drop
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; DMIN ( d1 d2 -- d ) smaller of two doubles
+; https://forth-standard.org/standard/double/DMIN
+;------------------------------------------------------------------------------
+PUBLIC  vm_dmin
+        JSR  vm_2over
+        JSR  vm_2over
+        JSR  vm_dlt
+        ZBRANCH @else
+        JSR  vm_2drop
+        BRANCH @then
+@else:
+        JSR  vm_2swap
+        JSR  vm_2drop
+@then:
+        RTS
+ENDPUBLIC
+
+PUBLIC  vm_ddot
         RTS
 ENDPUBLIC
 
