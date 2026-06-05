@@ -118,6 +118,9 @@ class BeginWhileRepeat(ASTNode):
 class DoLoop(ASTNode):
     """do <body> loop"""
     body: list = field(default_factory=list)
+    plus_loop: bool = False    # True if +loop, False if loop
+    line:      int  = 0
+    col:       int  = 0
 
 
 # ---------------------------------------------------------------------------

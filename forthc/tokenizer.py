@@ -31,6 +31,7 @@ class TType(Enum):
     REPEAT      = auto()   # repeat
     DO          = auto()   # do
     LOOP        = auto()   # loop
+    PLUSLOOP    = auto()   # +loop
     DOTQUOTE    = auto()   # ."  (print string literal)
     SQUOTE      = auto()   # S"  (string literal onto stack)
     ORIGIN      = auto()   # .origin  (extension: set origin address)
@@ -55,6 +56,7 @@ KEYWORD_MAP = {
     'repeat':   TType.REPEAT,
     'do':       TType.DO,
     'loop':     TType.LOOP,
+    '+loop':    TType.PLUSLOOP,
     '.origin':  TType.ORIGIN,
     '.segment': TType.SEGMENT,
     '.main':    TType.MAIN,

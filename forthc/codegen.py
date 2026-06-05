@@ -470,15 +470,16 @@ class CodeGenerator:
         self._emit_label(end_lbl)
 
     def _gen_do_loop(self, node: DoLoop, str_pool: list):
-        top_lbl = self._fresh_label('do')
-        end_lbl = self._fresh_label('loop')
+        top_lbl  = self._fresh_label('do')
+        end_lbl  = self._fresh_label('loop')
+        step_fn  = 'vm_plus_loop_step' if node.plus_loop else 'vm_do_loop_step'
         self._emit_instr('TWOTOR', 'do: push limit and index to R')
         self._emit_label(top_lbl)
         self._gen_body(node.body, str_pool)
-        self._emit_instr('CALL vm_do_loop_step', 'loop: increment and test')
-        self._emit_instr(f'ZBRANCH {top_lbl}',  'loop: branch if not done')
+        self._emit_instr(f'CALL {step_fn}',      'loop: increment and test')
+        self._emit_instr(f'ZBRANCH {top_lbl}',   'loop: branch if not done')
         self._emit_instr('TWORFROM', 'loop: discard limit and index from R')
-        self._emit_instr('CALL vm_2drop',  'loop: drop limit and index')
+        self._emit_instr('CALL vm_2drop',         'loop: drop limit and index')
         self._emit_label(end_lbl)
 
     # ------------------------------------------------------------------

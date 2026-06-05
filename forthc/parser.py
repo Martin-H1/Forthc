@@ -162,7 +162,7 @@ class Parser:
         while not self._match(TType.SEMICOLON, TType.ELSE,
                                TType.THEN, TType.UNTIL,
                                TType.WHILE, TType.REPEAT,
-                               TType.LOOP, TType.EOF):
+                               TType.LOOP, TType.PLUSLOOP, TType.EOF):
             stmts.append(self._stmt())
         return stmts
 
@@ -238,10 +238,12 @@ class Parser:
                          self._peek())
 
     def _do_stmt(self) -> DoLoop:
-        do_tok = self._advance()              # consume 'do'
-        body   = self._body()
-        self._expect(TType.LOOP)
-        return DoLoop(body=body, line=do_tok.line, col=do_tok.col)
+        do_tok   = self._advance()              # consume 'do'
+        body     = self._body()
+        plus     = self._match(TType.PLUSLOOP)
+        self._advance()                         # consume 'loop' or '+loop'
+        return DoLoop(body=body, plus_loop=plus,
+                      line=do_tok.line, col=do_tok.col)
 
 
 def parse(tokens: list[Token]) -> Program:
