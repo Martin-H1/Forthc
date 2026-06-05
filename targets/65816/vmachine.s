@@ -1073,6 +1073,30 @@ PUBLIC  vm_do_loop_step
         RTS
 ENDPUBLIC
 
+;------------------------------------------------------------------------------
+; vm_plus_loop_step ( step -- flag )
+; Adds step to the loop index on the return stack.
+; Returns FORTH_TRUE if loop should continue, FORTH_FALSE if done.
+;------------------------------------------------------------------------------
+PUBLIC  vm_plus_loop_step
+        LDA  TOS,X                  ; step
+        DROP                        ; consume step from parameter stack
+        CLC
+        ADC  3,S                    ; index += step
+        STA  3,S                    ; store updated index
+        CMP  5,S                    ; compare index with limit
+        BCC  @continue              ; index < limit, keep looping
+        LDA  #$FFFF                 ; done: push true (ZBRANCH will not branch)
+        BRA  @return
+@continue:
+        LDA  #0                     ; not done: push false (ZBRANCH branches back)
+@return:
+        DEX
+        DEX
+        STA  TOS,X
+        RTS
+ENDPUBLIC
+
 ; ---------------------------------------------------------------------------
 ; J  — ( -- n )  outer loop index
 ; ---------------------------------------------------------------------------

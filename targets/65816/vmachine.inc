@@ -120,6 +120,7 @@ PSP5            = CELL_SIZE * 5
         .import vm_dmin
         .import vm_ddot
         .import vm_do_loop_step
+        .import vm_plus_loop_step
         .import vm_j
         .import vm_emit
         .import vm_key
