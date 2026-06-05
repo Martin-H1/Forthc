@@ -1361,12 +1361,10 @@ PUBLIC  vm_here
 ENDPUBLIC
 
 PUBLIC  vm_count
-        LDA  TOS,X                  ; addr
-        TAY
+        LDY  TOS,X                  ; addr
         SEP  #$20
         LDA  0,Y                    ; length byte (8-bit)
         REP  #$20
-        LDA  TOS,X
         INY
         STY  TOS,X                  ; addr+1 (NOS)
         DEX
