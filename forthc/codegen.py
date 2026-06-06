@@ -42,10 +42,10 @@ import re
 
 from .ast_nodes import (
     Program, CreateDef, ConstantDef, VariableDef, WordDef,
-    OriginDirective, SegmentDirective, MainDirective,
-    NumberLit, StringLit, PrintString, WordCall,
-    IfThen, BeginUntil, BeginWhileRepeat, DoLoop,
-    ASTNode,
+    ExportDirective, OriginDirective, SegmentDirective,
+    MainDirective, NumberLit, StringLit, PrintString,
+    WordCall, IfThen, BeginUntil, BeginWhileRepeat,
+    DoLoop, ASTNode,
 )
 
 
@@ -233,7 +233,9 @@ class CodeGenerator:
         if len(mains) > 1:
             raise CodeGenError("Only one .main directive is allowed")
         self._entry_word = mains[0].word if mains else None
-
+        exports = {n.word for n in program.definitions
+                   if isinstance(n, ExportDirective)}
+        self._exports = exports
         self._emit_file_header()
         for node in program.definitions:
             self._top_def(node)
@@ -295,6 +297,8 @@ class CodeGenerator:
             self._gen_variable(node)
         elif isinstance(node, WordDef):
             self._gen_word(node)
+        elif isinstance(node, ExportDirective):
+            pass    # handled in pre-pass; _gen_word emits the .export
         elif isinstance(node, OriginDirective):
             self._gen_origin(node)
         elif isinstance(node, SegmentDirective):
@@ -335,7 +339,7 @@ class CodeGenerator:
         self._words.add(node.name)
         sym = _mangle(node.name)
         self._emit(f'; word definition: {node.name}')
-        if node.name == self._entry_word:
+        if node.name == self._entry_word or node.name in self._exports:
             self._emit(f'.export {sym}')
         self._emit_label(sym)
         str_pool: list[tuple[str, str]] = []

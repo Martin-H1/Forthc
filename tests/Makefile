@@ -10,6 +10,7 @@ debug: obj obj/debug bin bin/debug \
 	bin/debug/logic.bin bin/debug/logic.srec \
 	bin/debug/math.bin bin/debug/math.srec \
 	bin/debug/memory.bin bin/debug/memory.srec \
+	bin/debug/module.bin bin/debug/module.srec \
 	bin/debug/output.bin bin/debug/output.srec \
 	bin/debug/stack.bin bin/debug/stack.srec \
 	bin/debug/stack.bin bin/debug/string.srec
@@ -31,6 +32,9 @@ bin/debug/math.bin: obj/debug/vmachine.o obj/debug/math.o
 
 bin/debug/memory.bin: obj/debug/vmachine.o obj/debug/memory.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/memory.bin -m bin/debug/memory.map $^
+
+bin/debug/module.bin: obj/debug/vmachine.o obj/debug/module.o
+	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/module.bin -m bin/debug/module.map $^
 
 bin/debug/output.bin: obj/debug/vmachine.o obj/debug/output.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/output.bin -m bin/debug/output.map $^

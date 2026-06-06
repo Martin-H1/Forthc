@@ -27,8 +27,8 @@ Grammar (informal):
 from .tokenizer import Token, TType, TokenizeError
 from .ast_nodes import (
     Program, CreateDef, ConstantDef, VariableDef, WordDef,
-    OriginDirective, SegmentDirective, MainDirective,
-    NumberLit, StringLit, PrintString, WordCall,
+    ExportDirective, OriginDirective, SegmentDirective,
+    MainDirective, NumberLit, StringLit, PrintString, WordCall,
     IfThen, BeginUntil, BeginWhileRepeat, DoLoop,
 )
 
@@ -116,6 +116,12 @@ class Parser:
 
         if tok.type == TType.COLON:
             return self._word_def()
+
+        if tok.type == TType.EXPORT:
+            self._advance()
+            word_tok = self._expect(TType.WORD)
+            return ExportDirective(word=word_tok.value,
+                                   line=tok.line, col=tok.col)
 
         if tok.type == TType.ORIGIN:
             self._advance()

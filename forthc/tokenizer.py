@@ -34,6 +34,7 @@ class TType(Enum):
     PLUSLOOP    = auto()   # +loop
     DOTQUOTE    = auto()   # ."  (print string literal)
     SQUOTE      = auto()   # S"  (string literal onto stack)
+    EXPORT      = auto()   # .export  (extension: set word public for linker)
     ORIGIN      = auto()   # .origin  (extension: set origin address)
     SEGMENT     = auto()   # .segment (extension: set segment name)
     MAIN        = auto()   # .main    (extension: designate entry-point word)
@@ -57,6 +58,7 @@ KEYWORD_MAP = {
     'do':       TType.DO,
     'loop':     TType.LOOP,
     '+loop':    TType.PLUSLOOP,
+    '.export':  TType.EXPORT,
     '.origin':  TType.ORIGIN,
     '.segment': TType.SEGMENT,
     '.main':    TType.MAIN,

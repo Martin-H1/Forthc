@@ -47,6 +47,10 @@ class WordDef(ASTNode):
     name: str        = ''
     body: list       = field(default_factory=list)
 
+@dataclass
+class ExportDirective(ASTNode):
+    """.export foo  →  mark word 'foo' as a public symbol for the linker."""
+    word: str = ''
 
 @dataclass
 class OriginDirective(ASTNode):
