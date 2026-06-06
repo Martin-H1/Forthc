@@ -201,6 +201,8 @@ RUNTIME_CALLS: dict[str, str] = {
     'emit':   'vm_emit',
     'key':    'vm_key',
     'type':   'vm_type',
+    'hld':    'vm_hld_addr',
+    'pad':    'vm_pad_addr',
 }
 
 class CodeGenError(Exception):

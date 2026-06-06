@@ -15,6 +15,9 @@ debug: obj obj/debug bin bin/debug \
 	bin/debug/stack.bin bin/debug/stack.srec \
 	bin/debug/stack.bin bin/debug/string.srec
 
+obj/debug/pictured.o: ../targets/65816/pictured.fs
+	$(PYTHON) "..\__main__.py" $<
+
 obj/debug/vmachine.o: ../targets/65816/vmachine.s
 	$(CA65) --cpu 65816 $(CA65FLAGS) $< -l $*.lst -o $@
 

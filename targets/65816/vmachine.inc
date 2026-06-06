@@ -45,12 +45,6 @@ INT_MAX         = $7FFF
 MINUS_ONE       = $FFFF
 UINT_MAX        = $FFFF
 
-; ---------------------------------------------------------------------------
-; VM pointer initial values
-; ---------------------------------------------------------------------------
-PSP_INIT        = $02FF             ; empty stack: X starts here
-HERE_INIT       = $0600             ; Here starts on page 6.
-
 ; Parameter stack offsets (relative to X = PSP)
 TOS             = 0
 NOS             = CELL_SIZE
@@ -65,6 +59,7 @@ PSP5            = CELL_SIZE * 5
 ; ---------------------------------------------------------------------------
 .ifndef __vmachine_s__
         .import vm_base_addr
+        .import vm_clear
         .import vm_star
         .import vm_umstar
         .import vm_umslashmod
@@ -144,6 +139,8 @@ PSP5            = CELL_SIZE * 5
         .import vm_fill
         .import vm_sp_shadow
         .import vm_here_ptr
+        .import vm_hld_addr
+        .import vm_pad_end_addr
         .import vm_tmp1
         .import vm_tmp2
 .endif
@@ -427,17 +424,5 @@ PSP5            = CELL_SIZE * 5
 ; CLEAR  — ( ... -- )  reset parameter stack
 ; ---------------------------------------------------------------------------
 .macro  CLEAR
-        LDX  #PSP_INIT
-.endmacro
-
-; ---------------------------------------------------------------------------
-; Initialization macro — call once at program entry
-; ---------------------------------------------------------------------------
-.macro  VM_INIT
-        REP  #$30                   ; 16-bit A and X
-        LDX  #PSP_INIT              ; initialise parameter stack pointer
-        LDA  #HERE_INIT
-        STA  vm_here_ptr
-        LDA  #10
-        STA  vm_base
+        JSR  vm_clear
 .endmacro

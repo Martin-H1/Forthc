@@ -56,6 +56,24 @@ IND16   = $10                       ; index register width bit
 	.endproc
 .endmacro
 
+; Uninitialized data segment
+.segment "BSS"
+pstack: .res $1FF
+PSP_INIT:                           ; Stack starts here and grows downward.
+
+vm_pad: .res 36                     ; PAD buf (at least 2*cell+2 bytes per ANS)
+vm_pad_end:                         ; label at end of PAD
+vm_tib: .res 32                     ; terminal input buffer
+
+vm_hld: .res 2                      ; pictured output pointer
+vm_here_ptr:
+        .res 2                      ; HERE pointer for bump allocator
+vm_base:
+        .res 2                      ; numeric base (default 10)
+
+HERE_INIT:
+        .res $1000                  ; Here starts after all other VM data.
+
 .segment "CODE"
 
 ;----------------------------------------------------------------------------
@@ -66,9 +84,19 @@ IND16   = $10                       ; index register width bit
 .import forth_main
 
 PUBLIC  MAIN
-        VM_INIT
+        REP  #$30                   ; 16-bit A and X
+        LDX  #PSP_INIT              ; initialise parameter stack pointer
+        LDA  #HERE_INIT
+        STA  vm_here_ptr
+        LDA  #10
+        STA  vm_base
         JSR  forth_main
         RTL
+ENDPUBLIC
+
+PUBLIC  vm_clear
+        LDX  #PSP_INIT
+        RTS
 ENDPUBLIC
 
 ;------------------------------------------------------------------------------
@@ -1511,13 +1539,33 @@ PUBLIC  vm_fill
         RTS
 ENDPUBLIC
 
+;------------------------------------------------------------------------------
+; vm_hld_addr ( -- addr )  push address of HLD variable
+;------------------------------------------------------------------------------
+PUBLIC  vm_hld_addr
+        LDA  #vm_hld
+        DEX
+        DEX
+        STA  TOS,X
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; vm_pad_end_addr ( -- addr )  push address of PAD_END
+;------------------------------------------------------------------------------
+PUBLIC  vm_pad_end_addr
+        LDA  #vm_pad_end
+        DEX
+        DEX
+        STA  TOS,X
+        RTS
+ENDPUBLIC
+
 ;----------------------------------------------------------------------------
 ; Zero-page / RAM variables used by the runtime
 ;----------------------------------------------------------------------------
 .segment "ZEROPAGE"
 vm_sp_shadow:   .res 2              ; shadow of X (P-stack pointer)
-vm_here_ptr:    .res 2              ; HERE pointer for bump allocator
-vm_base:        .res 2              ; numeric base (default 10)
 vm_scratch0:    .res 2              ; general purpose scratch
 vm_scratch1:    .res 2              ; general purpose scratch
 vm_tmp1:        .res 2              ; scratch
