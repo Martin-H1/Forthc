@@ -33,7 +33,7 @@ obj/debug/vmachine.o: ../targets/65816/vmachine.s
 bin/debug/control.bin: obj/debug/vmachine.o obj/debug/control.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/control.bin -m bin/debug/control.map $^
 
-bin/debug/double.bin: obj/debug/vmachine.o obj/debug/double.o
+bin/debug/double.bin: obj/debug/vmachine.o obj/debug/core.o obj/debug/double.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/double.bin -m bin/debug/double.map $^
 
 bin/debug/logic.bin: obj/debug/vmachine.o obj/debug/logic.o

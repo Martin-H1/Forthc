@@ -750,20 +750,6 @@ PUBLIC  vm_roll                     ; ROLL ( xu xu-1 ... x0 u -- xu-1 ... x0 xu)
         RTS
 ENDPUBLIC
 
-; vm_stod - sign extend a word to a long.
-PUBLIC  vm_stod
-        DEX
-        DEX
-        LDA  NOS,X                  ; n
-        BPL  @positive
-        LDA  #MINUS_ONE             ; negative -> high cell = -1
-        STA  TOS,X
-        RTS
-@positive:
-        STZ  TOS,X                  ; positive -> high cell = 0
-        RTS
-ENDPUBLIC
-
 ;------------------------------------------------------------------------------
 ; 2@ ( a-addr -- x1 x2 ) Fetch the cell pair x1 x2 stored at a-addr. x2 is
 ; stored at a-addr and x1 at the next consecutive cell. It is equivalent to
@@ -1409,21 +1395,6 @@ PUBLIC  vm_allot
         CLC
         ADC  vm_here_ptr
         STA  vm_here_ptr
-        RTS
-ENDPUBLIC
-
-PUBLIC  vm_cells
-        LDA  TOS,X
-        ASL  A
-        STA  TOS,X
-        RTS
-ENDPUBLIC
-
-PUBLIC  vm_cellplus
-        LDA  TOS,X
-        INC  A
-        INC  A
-        STA  TOS,X
         RTS
 ENDPUBLIC
 

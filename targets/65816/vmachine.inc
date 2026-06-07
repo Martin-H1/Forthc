@@ -100,7 +100,6 @@ PSP5            = CELL_SIZE * 5
         .import vm_2swap
         .import vm_2over
         .import vm_2rot
-        .import vm_stod
         .import vm_dplus
         .import vm_dminus
         .import vm_dabs
@@ -131,8 +130,6 @@ PSP5            = CELL_SIZE * 5
         .import vm_depth
         .import vm_dots
         .import vm_allot
-        .import vm_cells
-        .import vm_cellplus
         .import vm_here
         .import vm_count
         .import vm_move
@@ -155,10 +152,12 @@ PSP5            = CELL_SIZE * 5
         .import _slmod
         .import _sl
         .import mod
+        .import s_tod
         .import not
         .import true
         .import false
         .import cell
+        .import cells
         .import cell_pl
 .endif
 

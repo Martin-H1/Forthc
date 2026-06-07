@@ -10,6 +10,7 @@
 .export /mod
 .export /
 .export mod
+.export s>d
 .export not
 .export true
 .export false
@@ -75,6 +76,12 @@
     drop                            ( remainder )
 ;
 
+\ S>D - ( n -- n [0 | -1]) sign extend a word to a long.
+: s>d
+    dup 0<
+;
+
+
 \ Logic
 
 : not ( f -- f )
@@ -97,6 +104,10 @@
 
 : cell ( -- n )
     CELL_SIZE
+;
+
+: cells ( n -- n*cell_size)
+    CELL_SIZE *
 ;
 
 : cell+ ( n -- n+CELL_SIZE )
