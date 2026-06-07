@@ -13,6 +13,9 @@
 .export /
 .export mod
 .export s>d
+.export d2*
+.export d2/
+.export d>s
 .export not
 .export true
 .export false
@@ -110,6 +113,39 @@
 \ S>D - ( n -- n [0 | -1]) sign extend a word to a long.
 : s>d
     dup 0<
+;
+
+\------------------------------------------------------------------------------
+\ D2* ( d -- d*2 ) double shift left.
+\ https://forth-standard.org/standard/double/DTwoTimes
+\------------------------------------------------------------------------------
+: d2*
+    2dup
+    d+
+;
+
+\------------------------------------------------------------------------------
+\ D2/ ( d -- d/2 ) double arithmetic right shift.
+\ https://forth-standard.org/standard/double/DTwoDiv
+\------------------------------------------------------------------------------
+: d2/
+    dup
+    1 and
+    15 lshift
+    >r
+    2/
+    swap
+    2/
+    r>
+    or
+    swap
+;
+
+\------------------------------------------------------------------------------
+\ D>S ( d -- n ) truncate double to single, discard high cell
+\------------------------------------------------------------------------------
+: d>s
+    drop
 ;
 
 

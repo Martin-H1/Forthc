@@ -101,9 +101,6 @@ PSP5            = CELL_SIZE * 5
         .import vm_dplus
         .import vm_dminus
         .import vm_dabs
-        .import vm_d2star
-        .import vm_d2slash
-        .import vm_dtos
         .import vm_dnegate
         .import vm_deq
         .import vm_dzeq
@@ -152,6 +149,9 @@ PSP5            = CELL_SIZE * 5
         .import _sl
         .import mod
         .import s_tod
+        .import d_tos
+        .import d2_sl
+        .import d2_mul
         .import not
         .import true
         .import false

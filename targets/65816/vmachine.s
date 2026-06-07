@@ -876,44 +876,6 @@ PUBLIC  vm_dabs
 ENDPUBLIC
 
 ;------------------------------------------------------------------------------
-; D2* ( d -- d*2 ) double shift left.
-; https://forth-standard.org/standard/double/DTwoTimes
-;------------------------------------------------------------------------------
-PUBLIC  vm_d2star
-        JSR  vm_2dup
-        JSR  vm_dplus
-        RTS
-ENDPUBLIC
-
-;------------------------------------------------------------------------------
-; D2/ ( d -- d/2 ) double arithmetic right shift.
-; https://forth-standard.org/standard/double/DTwoDiv
-;------------------------------------------------------------------------------
-PUBLIC  vm_d2slash
-        DUP
-        LIT  1
-        JSR  vm_and
-        LIT  15
-        JSR  vm_lshift
-        TOR
-        TWOSLASH
-        JSR  vm_swap
-        TWOSLASH
-        RFROM
-        JSR  vm_or
-        JSR  vm_swap
-        RTS
-ENDPUBLIC
-
-;------------------------------------------------------------------------------
-; D>S ( d -- n ) truncate double to single, discard high cell
-;------------------------------------------------------------------------------
-PUBLIC  vm_dtos
-        DROP
-        RTS
-ENDPUBLIC
-
-;------------------------------------------------------------------------------
 ; DNEGATE ( d -- -d ) negate the double cell in ANS order on stack.
 ; https://forth-standard.org/standard/double/DNEGATE
 ;------------------------------------------------------------------------------
