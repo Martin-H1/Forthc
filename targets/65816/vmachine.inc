@@ -36,8 +36,11 @@
 ; ANS Forth boolean values
 FORTH_TRUE      = $FFFF
 FORTH_FALSE     = $0000
+forth_true      = FORTH_TRUE
+forth_false     = FORTH_FALSE
 
 CELL_SIZE       = 2
+cell_size       = CELL_SIZE
 
 ; Integer constants (based on C's limits.h)
 INT_MIN         = $8000
