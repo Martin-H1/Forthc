@@ -30,7 +30,7 @@ obj/debug/core.o: ../targets/65816/core.s
 obj/debug/vmachine.o: ../targets/65816/vmachine.s
 	$(CA65) --cpu 65816 $(CA65FLAGS) $< -l $*.lst -o $@
 
-bin/debug/control.bin: obj/debug/vmachine.o obj/debug/control.o
+bin/debug/control.bin: obj/debug/vmachine.o obj/debug/core.o obj/debug/control.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/control.bin -m bin/debug/control.map $^
 
 bin/debug/double.bin: obj/debug/vmachine.o obj/debug/core.o obj/debug/double.o
@@ -51,7 +51,7 @@ bin/debug/module.bin: obj/debug/vmachine.o obj/debug/module.o
 bin/debug/output.bin: obj/debug/vmachine.o obj/debug/pictured.o obj/debug/core.o obj/debug/output.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/output.bin -m bin/debug/output.map $^
 
-bin/debug/stack.bin: obj/debug/vmachine.o obj/debug/stack.o
+bin/debug/stack.bin: obj/debug/vmachine.o obj/debug/core.o obj/debug/stack.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/stack.bin -m bin/debug/stack.map $^
 
 bin/debug/string.bin: obj/debug/vmachine.o obj/debug/string.o
@@ -65,6 +65,8 @@ bin/debug/string.bin: obj/debug/vmachine.o obj/debug/string.o
 
 clean:
 	-$(RM) *.s
+	-$(RM) ..$(SEP)targets$(SEP)65816$(SEP)pictured.s
+	-$(RM) ..$(SEP)targets$(SEP)65816$(SEP)core.s
 	-$(RM) bin$(SEP)debug$(SEP)*.map
 	-$(RM) bin$(SEP)debug$(SEP)*.bin
 	-$(RM) bin$(SEP)debug$(SEP)*.srec

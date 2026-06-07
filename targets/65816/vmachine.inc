@@ -96,10 +96,8 @@ PSP5            = CELL_SIZE * 5
         .import vm_2fetch
         .import vm_2store
         .import vm_2dup
-        .import vm_2drop
         .import vm_2swap
         .import vm_2over
-        .import vm_2rot
         .import vm_dplus
         .import vm_dminus
         .import vm_dabs
@@ -112,8 +110,6 @@ PSP5            = CELL_SIZE * 5
         .import vm_dzlt
         .import vm_dult
         .import vm_dlt
-        .import vm_dmax
-        .import vm_dmin
         .import vm_ddot
         .import vm_do_loop_step
         .import vm_plus_loop_step
@@ -145,8 +141,11 @@ PSP5            = CELL_SIZE * 5
 .ifndef __core_fs__
         .import max
         .import min
+        .import dmax
+        .import dmin
         .import umax
         .import umin
+        .import negate
         .import _2_pl
         .import _2_
         .import _slmod
@@ -156,9 +155,12 @@ PSP5            = CELL_SIZE * 5
         .import not
         .import true
         .import false
+        .import _pl_store
         .import cell
         .import cells
         .import cell_pl
+        .import _2drop
+        .import _2rot
 .endif
 
 .ifndef __pictured_fs__

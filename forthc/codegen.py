@@ -158,10 +158,8 @@ RUNTIME_CALLS: dict[str, str] = {
     '2@':     'vm_2fetch',
     '2!':     'vm_2store',
     '2dup':   'vm_2dup',
-    '2drop':  'vm_2drop',
     '2swap':  'vm_2swap',
     '2over':  'vm_2over',
-    '2rot':   'vm_2rot',
     'j':      'vm_j',
     'allot':  'vm_allot',
     'here':   'vm_here',
@@ -183,9 +181,6 @@ RUNTIME_CALLS: dict[str, str] = {
     'd0<':    'vm_dzlt',
     'du<':    'vm_dult',
     'd<':     'vm_dlt',
-    'dmax':   'vm_dmax',
-    'dmin':   'vm_dmin',
-    'd.':     'vm_ddot',
     'cr':     'vm_cr',
     'space':  'vm_space',
     'spaces': 'vm_spaces',
@@ -491,7 +486,7 @@ class CodeGenerator:
         self._emit_instr(f'CALL {step_fn}',      'loop: increment and test')
         self._emit_instr(f'ZBRANCH {top_lbl}',   'loop: branch if not done')
         self._emit_instr('TWORFROM', 'loop: discard limit and index from R')
-        self._emit_instr('CALL vm_2drop',         'loop: drop limit and index')
+        self._emit_instr('CALL _2drop',          'loop: drop limit and index')
         self._emit_label(end_lbl)
 
     # ------------------------------------------------------------------

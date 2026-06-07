@@ -798,12 +798,6 @@ PUBLIC  vm_2dup
         RTS
 ENDPUBLIC
 
-PUBLIC  vm_2drop
-        DROP
-        DROP
-        RTS
-ENDPUBLIC
-
 ;------------------------------------------------------------------------------
 ; 2SWAP ( a b c d -- c d a b )
 ;------------------------------------------------------------------------------
@@ -833,17 +827,6 @@ PUBLIC  vm_2over
         DEX
         DEX
         STA  TOS,X                  ; Push b
-        RTS
-ENDPUBLIC
-
-;------------------------------------------------------------------------------
-; 2ROT ( d1_lo d1_hi d2_lo d2_hi d3_lo d3_hi -- d2_lo d2_hi d3_lo d3_hi d1_lo d1_hi )
-;------------------------------------------------------------------------------
-PUBLIC  vm_2rot
-        LIT  5
-        JSR  vm_roll                ; ( d1_hi d2_lo d2_hi d3_lo d3_hi d1_lo )
-        LIT  5
-        JSR  vm_roll                ; ( d2_lo d2_hi d3_lo d3_hi d1_lo d1_hi )
         RTS
 ENDPUBLIC
 
@@ -1049,42 +1032,6 @@ PUBLIC  vm_dlt
         DROP
         DROP
         STA  TOS,X                  ; Put flag in 4th cell
-        RTS
-ENDPUBLIC
-
-;------------------------------------------------------------------------------
-; DMAX ( d1 d2 -- d ) larger of two doubles
-; https://forth-standard.org/standard/double/DMAX
-;------------------------------------------------------------------------------
-PUBLIC  vm_dmax
-        JSR  vm_2over
-        JSR  vm_2over
-        JSR  vm_dlt
-        ZBRANCH @skip
-        JSR  vm_2swap
-@skip:  JSR  vm_2drop
-        RTS
-ENDPUBLIC
-
-;------------------------------------------------------------------------------
-; DMIN ( d1 d2 -- d ) smaller of two doubles
-; https://forth-standard.org/standard/double/DMIN
-;------------------------------------------------------------------------------
-PUBLIC  vm_dmin
-        JSR  vm_2over
-        JSR  vm_2over
-        JSR  vm_dlt
-        ZBRANCH @else
-        JSR  vm_2drop
-        BRANCH @then
-@else:
-        JSR  vm_2swap
-        JSR  vm_2drop
-@then:
-        RTS
-ENDPUBLIC
-
-PUBLIC  vm_ddot
         RTS
 ENDPUBLIC
 
