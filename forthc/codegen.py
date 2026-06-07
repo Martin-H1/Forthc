@@ -42,7 +42,7 @@ import re
 
 from .ast_nodes import (
     Program, CreateDef, ConstantDef, VariableDef, WordDef,
-    ExportDirective, OriginDirective, SegmentDirective,
+    DefineDirective, ExportDirective, OriginDirective, SegmentDirective,
     MainDirective, NumberLit, StringLit, PrintString,
     WordCall, IfThen, BeginUntil, BeginWhileRepeat,
     DoLoop, ASTNode,
@@ -202,7 +202,7 @@ RUNTIME_CALLS: dict[str, str] = {
     'key':    'vm_key',
     'type':   'vm_type',
     'hld':    'vm_hld_addr',
-    'pad':    'vm_pad_addr',
+    'pad-end': 'vm_pad_end_addr',
 }
 
 class CodeGenError(Exception):
@@ -230,6 +230,8 @@ class CodeGenerator:
     # ------------------------------------------------------------------
 
     def generate(self, program: Program) -> str:
+        self._defines = {n.symbol for n in program.definitions
+                     if isinstance(n, DefineDirective)}
         # Pre-pass: find MainDirective to know which word to export.
         mains = [n for n in program.definitions if isinstance(n, MainDirective)]
         if len(mains) > 1:
@@ -279,6 +281,11 @@ class CodeGenerator:
         self._emit('        .A16')
         self._emit('        .I16')
         self._emit()
+        # Guard symbols must come before .include so .ifndef guards fire correctly
+        for sym in sorted(self._defines):
+            self._emit(f'{sym} = 1')
+        if self._defines:
+            self._emit()
         self._emit('.include "vmachine.inc"')
         self._emit()
 
@@ -299,6 +306,8 @@ class CodeGenerator:
             self._gen_variable(node)
         elif isinstance(node, WordDef):
             self._gen_word(node)
+        elif isinstance(node, DefineDirective):
+            pass    # emitted before .include in _emit_file_header
         elif isinstance(node, ExportDirective):
             pass    # handled in pre-pass; _gen_word emits the .export
         elif isinstance(node, OriginDirective):

@@ -15,8 +15,11 @@ debug: obj obj/debug bin bin/debug \
 	bin/debug/stack.bin bin/debug/stack.srec \
 	bin/debug/stack.bin bin/debug/string.srec
 
-obj/debug/pictured.o: ../targets/65816/pictured.fs
+../targets/65816/pictured.s: ../targets/65816/pictured.fs
 	$(PYTHON) "..\__main__.py" $<
+
+obj/debug/pictured.o: ../targets/65816/pictured.s
+	$(CA65) --cpu 65816 $(CA65FLAGS) $< -l obj/debug/pictured.lst -o $@
 
 obj/debug/vmachine.o: ../targets/65816/vmachine.s
 	$(CA65) --cpu 65816 $(CA65FLAGS) $< -l $*.lst -o $@
@@ -39,7 +42,7 @@ bin/debug/memory.bin: obj/debug/vmachine.o obj/debug/memory.o
 bin/debug/module.bin: obj/debug/vmachine.o obj/debug/module.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/module.bin -m bin/debug/module.map $^
 
-bin/debug/output.bin: obj/debug/vmachine.o obj/debug/output.o
+bin/debug/output.bin: obj/debug/vmachine.o obj/debug/pictured.o obj/debug/output.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/output.bin -m bin/debug/output.map $^
 
 bin/debug/stack.bin: obj/debug/vmachine.o obj/debug/stack.o

@@ -9,6 +9,7 @@
     test-spaces
     test-dot
     test-dots
+    test-pic
 ;
 
 : hello
@@ -41,3 +42,8 @@
 
 : test-dots
  1 2 3 4 .s cr ;
+
+: test-pic
+    1234 0 <# #s #> ." 1234 0 <# #s #> (expect 1234) = " type cr
+    -1234 dup >r abs 0 <# #s r> sign #> ." (expect -1234) = " type cr
+;

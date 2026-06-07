@@ -48,6 +48,11 @@ class WordDef(ASTNode):
     body: list       = field(default_factory=list)
 
 @dataclass
+class DefineDirective(ASTNode):
+    """.define FOO  →  define an assembler symbol with no value (for guards)."""
+    symbol: str = ''
+
+@dataclass
 class ExportDirective(ASTNode):
     """.export foo  →  mark word 'foo' as a public symbol for the linker."""
     word: str = ''

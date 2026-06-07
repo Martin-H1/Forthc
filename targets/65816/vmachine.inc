@@ -145,6 +145,21 @@ PSP5            = CELL_SIZE * 5
         .import vm_tmp2
 .endif
 
+.ifndef __pictured_fs__
+        .import ud_slmod
+        .import _from_hash
+        .import hold
+        .import holds
+        .import _hash
+        .import _hashs
+        .import sign
+        .import _hash_to
+        .import _dotr
+        .import u_dotr
+        .import d_dotr
+        .import d_dot
+.endif
+
 ; ---------------------------------------------------------------------------
 ; LIT  — push a literal value onto the parameter stack
 ; ---------------------------------------------------------------------------
