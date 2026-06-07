@@ -52,15 +52,15 @@
 ;
 
 : .r ( n1 n2 -- )
-    swap dup >r abs 0 <# #s r> sign #> rot over - spaces type
+    swap dup >r abs 0 <# #s r> sign #> rot over - 0 max spaces type
 ;
 
 : u.r ( u n -- )
-    >r 0 <# #s #> r> over - spaces type
+    >r 0 <# #s #> r> over - 0 max spaces type
 ;
 
 : d.r ( d n -- )
-    >r tuck dabs <# #s rot sign #> r> over - spaces type
+    >r tuck dabs <# #s rot sign #> r> over - 0 max spaces type
 ;
 
 : d. ( d -- )

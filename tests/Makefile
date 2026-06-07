@@ -39,7 +39,7 @@ bin/debug/double.bin: obj/debug/vmachine.o obj/debug/double.o
 bin/debug/logic.bin: obj/debug/vmachine.o obj/debug/logic.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/logic.bin -m bin/debug/logic.map $^
 
-bin/debug/math.bin: obj/debug/vmachine.o obj/debug/math.o
+bin/debug/math.bin: obj/debug/vmachine.o obj/debug/core.o obj/debug/math.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/math.bin -m bin/debug/math.map $^
 
 bin/debug/memory.bin: obj/debug/vmachine.o obj/debug/memory.o

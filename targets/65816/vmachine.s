@@ -286,35 +286,6 @@ PUBLIC  vm_umslashmod
 ENDPUBLIC
 
 ;------------------------------------------------------------------------------
-; /MOD ( n1 n2 -- rem quot )   signed floored division
-;------------------------------------------------------------------------------
-PUBLIC  vm_slashmod
-        JSR  vm_swap                ; ( n2 n1 )
-        JSR  vm_stod                ; ( n2 n1 n1_hi )
-        JSR  vm_rot                 ; ( n1 n1_hi n2 )
-        JSR  vm_fmmod               ; ( rem quot )
-        RTS
-ENDPUBLIC
-
-;----------------------------------------------------------------------------
-; /  —  ( n1 n2 -- n3 )   signed 16/16 division
-;----------------------------------------------------------------------------
-PUBLIC  vm_slash
-        JSR  vm_slashmod
-        NIP                         ; discard remainder
-        RTS
-ENDPUBLIC
-
-;----------------------------------------------------------------------------
-; MOD  —  ( n1 n2 -- n3 )   modulo
-;----------------------------------------------------------------------------
-PUBLIC  vm_mod
-        JSR  vm_slashmod
-        DROP                        ; remainder → TOS
-        RTS
-ENDPUBLIC
-
-;------------------------------------------------------------------------------
 ; SM/REM ( d1 n1 -- n2 n3 ) Divide d1 by n1, giving the symmetric quotient n3
 ; and the remainder n2. Input and output stack arguments are signed. An
 ; ambiguous condition exists if n1 is zero or if the quotient lies outside

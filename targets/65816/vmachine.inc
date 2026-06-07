@@ -66,9 +66,6 @@ PSP5            = CELL_SIZE * 5
         .import vm_star
         .import vm_umstar
         .import vm_umslashmod
-        .import vm_slashmod
-        .import vm_slash
-        .import vm_mod
         .import vm_smrem
         .import vm_fmmod
         .import vm_and
@@ -146,6 +143,23 @@ PSP5            = CELL_SIZE * 5
         .import vm_pad_end_addr
         .import vm_tmp1
         .import vm_tmp2
+.endif
+
+.ifndef __core_fs__
+        .import max
+        .import min
+        .import umax
+        .import umin
+        .import _2_pl
+        .import _2_
+        .import _slmod
+        .import _sl
+        .import mod
+        .import not
+        .import true
+        .import false
+        .import cell
+        .import cell_pl
 .endif
 
 .ifndef __pictured_fs__
