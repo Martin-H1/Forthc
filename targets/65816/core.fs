@@ -50,11 +50,11 @@ $FFFF constant uint_max
 \ Comparison
 
 : max ( n1 n2 -- n3 )
-    2dup < if drop else nip then
+    2dup > if drop else nip then
 ;
 
 : min ( n1 n2 -- n3 )
-    2dup > if drop else nip then
+    2dup < if drop else nip then
 ;
 
 : umax ( u1 u2 -- u3 )
