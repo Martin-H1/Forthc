@@ -9,10 +9,10 @@
 .export d0<
 .export dmax
 .export dmin
-.export min_int
-.export max_int
-.export min_2int
-.export max_2int
+.export min-int
+.export max-int
+.export min-2int
+.export max-2int
 .export negate
 .export 2+
 .export 2-
