@@ -140,6 +140,10 @@ PSP5            = CELL_SIZE * 5
         .import d0_from
         .import dmax
         .import dmin
+        .import min_int
+        .import max_int
+        .import min_2int
+        .import max_2int
         .import negate
         .import _2_pl
         .import _2_
