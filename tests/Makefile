@@ -6,6 +6,7 @@ all: debug
 
 debug: obj obj/debug bin bin/debug \
 	bin/debug/control.bin bin/debug/control.srec \
+	bin/debug/core-test.bin bin/debug/core-test.srec \
 	bin/debug/double.bin bin/debug/double.srec \
 	bin/debug/logic.bin bin/debug/logic.srec \
 	bin/debug/math.bin bin/debug/math.srec \
@@ -32,6 +33,9 @@ obj/debug/vmachine.o: ../targets/65816/vmachine.s
 
 bin/debug/control.bin: obj/debug/vmachine.o obj/debug/core.o obj/debug/control.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/control.bin -m bin/debug/control.map $^
+
+bin/debug/core-test.bin: obj/debug/vmachine.o obj/debug/core.o obj/debug/pictured.o obj/debug/core-test.o
+	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/core-test.bin -m bin/debug/core-test.map $^
 
 bin/debug/double.bin: obj/debug/vmachine.o obj/debug/core.o obj/debug/double.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/double.bin -m bin/debug/double.map $^
