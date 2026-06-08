@@ -36,11 +36,8 @@
 ; ANS Forth boolean values
 FORTH_TRUE      = $FFFF
 FORTH_FALSE     = $0000
-forth_true      = FORTH_TRUE
-forth_false     = FORTH_FALSE
 
 CELL_SIZE       = 2
-cell_size       = CELL_SIZE
 
 ; Integer constants (based on C's limits.h)
 INT_MIN         = $8000
@@ -103,11 +100,9 @@ PSP5            = CELL_SIZE * 5
         .import vm_dabs
         .import vm_dnegate
         .import vm_deq
-        .import vm_dzeq
-        .import vm_dzlt
         .import vm_dult
         .import vm_dlt
-        .import vm_ddot
+        .import vm_execute
         .import vm_do_loop_step
         .import vm_plus_loop_step
         .import vm_j
@@ -138,24 +133,33 @@ PSP5            = CELL_SIZE * 5
 .ifndef __core_fs__
         .import max
         .import min
-        .import dmax
-        .import dmin
         .import umax
         .import umin
+        .import within
+        .import d0_eq
+        .import d0_from
+        .import dmax
+        .import dmin
         .import negate
         .import _2_pl
         .import _2_
         .import _slmod
         .import _sl
+        .import _mul_slmod
+        .import _mul_sl
         .import mod
         .import s_tod
-        .import d_tos
-        .import d2_sl
+        .import m_pl
+        .import m_mul
+        .import m_mul_sl
         .import d2_mul
+        .import d2_sl
+        .import d_tos
         .import not
         .import true
         .import false
         .import _pl_store
+        .import aligned
         .import cell
         .import cells
         .import cell_pl

@@ -916,26 +916,6 @@ PUBLIC  vm_deq
 ENDPUBLIC
 
 ;------------------------------------------------------------------------------
-; D0= ( ud_lo ud_hi -- flag ) true if double is zero
-; https://forth-standard.org/standard/double/DZeroEqual
-;------------------------------------------------------------------------------
-PUBLIC  vm_dzeq
-        JSR  vm_or
-        JSR  vm_zeq
-        RTS
-ENDPUBLIC
-
-;------------------------------------------------------------------------------
-; D0< ( ud_lo ud_hi -- flag ) true if double is negative
-; https://forth-standard.org/standard/double/DZeroless
-;------------------------------------------------------------------------------
-PUBLIC  vm_dzlt
-        NIP
-        JSR  vm_zlt
-        RTS
-ENDPUBLIC
-
-;------------------------------------------------------------------------------
 ; DU< ( ud1_lo ud1_hi ud2_lo ud2_hi -- flag )
 ; Unsigned 32-bit less than.
 ;------------------------------------------------------------------------------
@@ -995,6 +975,15 @@ PUBLIC  vm_dlt
         DROP
         STA  TOS,X                  ; Put flag in 4th cell
         RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; EXECUTE ( xt -- ) execute word by execution token
+;------------------------------------------------------------------------------
+PUBLIC  vm_execute
+        LDA  TOS,X                  ; xt = code pointer
+        STA  vm_scratch0            ; place in scratch pointer.
+        JMP  (vm_scratch0)          ; Jump (RTS will return to our caller.)
 ENDPUBLIC
 
 ;----------------------------------------------------------------------------
