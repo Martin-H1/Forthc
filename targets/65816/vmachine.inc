@@ -115,6 +115,7 @@ PSP5            = CELL_SIZE * 5
         .import vm_spaces
         .import vm_dot
         .import vm_udot
+        .import vm_dothex
         .import vm_depth
         .import vm_dots
         .import vm_allot

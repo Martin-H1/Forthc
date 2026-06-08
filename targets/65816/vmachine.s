@@ -1229,6 +1229,40 @@ ENDPUBLIC
         RTS
 .endproc
 
+; vm_dothex - prints a 16 bit hex number to the console.
+PUBLIC  vm_dothex
+        LDA  TOS,X
+        XBA
+        JSR  putahex
+        LDA  TOS,X
+        JSR  putahex
+        LDA  #' '
+        JSR  platform_putc
+        DROP
+        RTS
+
+putahex:
+        PHA
+        LSR
+        LSR
+        LSR
+        LSR
+        JSR  @print_nybble
+        PLA
+        JSR  @print_nybble
+        RTS
+
+@print_nybble:
+        AND  #$000F
+        SED
+        CLC
+        ADC  #$9990                     ; Produce $90-$99 or $00-$05
+        ADC  #$9940                     ; Produce $30-$39 or $41-$46
+        CLD
+        JMP  platform_putc
+ENDPUBLIC
+
+
 ;------------------------------------------------------------------------------
 ; DEPTH ( -- n ) number of items on parameter stack
 ;------------------------------------------------------------------------------

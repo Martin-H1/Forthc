@@ -182,6 +182,7 @@ RUNTIME_CALLS: dict[str, str] = {
     'spaces': 'vm_spaces',
     '.':      'vm_dot',
     'u.':     'vm_udot',
+    '.hex':   'vm_dothex',
     'cputs':  'vm_cputs',
     'emit':   'vm_emit',
     'key':    'vm_key',
