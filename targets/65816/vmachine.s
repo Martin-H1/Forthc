@@ -1229,7 +1229,9 @@ ENDPUBLIC
         RTS
 .endproc
 
-; vm_dothex - prints a 16 bit hex number to the console.
+;------------------------------------------------------------------------------
+; vm_dothex ( n -- ) - prints a 16 bit hex number to the console.
+;------------------------------------------------------------------------------
 PUBLIC  vm_dothex
         LDA  TOS,X
         XBA
@@ -1261,7 +1263,6 @@ putahex:
         CLD
         JMP  platform_putc
 ENDPUBLIC
-
 
 ;------------------------------------------------------------------------------
 ; DEPTH ( -- n ) number of items on parameter stack
@@ -1320,21 +1321,58 @@ ENDPUBLIC
 ;----------------------------------------------------------------------------
 ; Memory operations
 ;----------------------------------------------------------------------------
+
+;------------------------------------------------------------------------------
+; ALLOT ( n -- ) advance bump allocator pointer by n bytes
+;------------------------------------------------------------------------------
 PUBLIC  vm_allot
         LDA  TOS,X
-        INX
-        INX
+        DROP
         CLC
         ADC  vm_here_ptr
         STA  vm_here_ptr
         RTS
 ENDPUBLIC
 
+;------------------------------------------------------------------------------
+; HERE ( -- addr ) current bump allocator pointer
+;------------------------------------------------------------------------------
 PUBLIC  vm_here
         DEX
         DEX
         LDA  vm_here_ptr
         STA  TOS,X
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; , ( val -- ) compile cell into memory
+;------------------------------------------------------------------------------
+PUBLIC  vm_comma
+        LDA  vm_here_ptr
+        TAY
+        CLC                     ; DP += CELL_SIZE
+        ADC  #CELL_SIZE
+        STA  vm_here_ptr        ; Write updated pointer back
+        LDA  TOS,X              ; Pop val off parameter stack
+        DROP
+        STA  0,Y                ; Store val at DP
+        RTS
+ENDPUBLIC
+
+;------------------------------------------------------------------------------
+; c, ( byte -- ) compile byte into dictionary
+;------------------------------------------------------------------------------
+PUBLIC  vm_ccomma
+        LDA  vm_here_ptr
+        TAY
+        INC  A                  ; DP += 1
+        STA  vm_here_ptr        ; Write updated DP back
+        LDA  TOS,X              ; Pop byte off parameter stack
+        DROP
+        OFF16MEM
+        STA  0,Y                ; Store byte at DP pointer
+        ON16MEM
         RTS
 ENDPUBLIC
 
