@@ -34,6 +34,7 @@
 .export cell
 .export cells
 .export cell+
+.export erase
 .export 2drop
 .export 2rot
 
@@ -344,6 +345,13 @@ $FFFF constant uint_max
 
 : cell+ ( n -- n+CELL_SIZE )
     CELL_SIZE +
+;
+
+\------------------------------------------------------------------------------
+\ ERASE ( addr u -- ) fill u bytes starting at addr with zero
+\------------------------------------------------------------------------------
+: erase
+    0 fill
 ;
 
 \ Stack functions
