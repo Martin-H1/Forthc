@@ -22,3 +22,9 @@ build/
 
 # Debug files
 *.lst
+
+# Generated VM source.
+core.inc
+core.s
+pictured.inc
+pictured.s
