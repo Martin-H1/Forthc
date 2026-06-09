@@ -1,5 +1,3 @@
-.define __pictured_fs__
-
 .export ud/mod
 .export <#
 .export hold

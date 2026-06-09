@@ -62,22 +62,29 @@ def main():
         pprint.pprint(program)
         return
 
+    # stem: "core.fs" -> "core_fs", "pictured.fs" -> "pictured_fs"
+    stem = src_path.name.replace('.', '_').replace('-', '_')
+
     # --- Code generation ---
     try:
-        asm = generate(program)
+        result = generate(program, stem=stem)
     except CodeGenError as e:
         print(f"forthc: codegen error: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # --- Write output ---
+    # --- Write .s output ---
     if args.output:
         out_path = pathlib.Path(args.output)
     else:
         out_path = src_path.with_suffix('.s')
+    out_path.write_text(result.asm, encoding='utf-8')
+    print(f"forthc: wrote {out_path}  ({len(result.asm)} bytes)")
 
-    out_path.write_text(asm, encoding='utf-8')
-    print(f"forthc: wrote {out_path}  ({len(asm)} bytes)")
-
+    # --- Write .inc if exports exist ---
+    if result.inc:
+        inc_path = out_path.with_suffix('.inc')
+        inc_path.write_text(result.inc, encoding='utf-8')
+        print(f"forthc: wrote {inc_path}")
 
 if __name__ == '__main__':
     main()

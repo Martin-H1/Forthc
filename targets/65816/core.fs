@@ -1,5 +1,3 @@
-.define __core_fs__
-
 .export max
 .export min
 .export umax

@@ -69,8 +69,11 @@ bin/debug/string.bin: obj/debug/vmachine.o obj/debug/string.o
 
 clean:
 	-$(RM) *.s
-	-$(RM) ..$(SEP)targets$(SEP)65816$(SEP)pictured.s
+	-$(RM) module.inc
+	-$(RM) ..$(SEP)targets$(SEP)65816$(SEP)core.inc
 	-$(RM) ..$(SEP)targets$(SEP)65816$(SEP)core.s
+	-$(RM) ..$(SEP)targets$(SEP)65816$(SEP)pictured.inc
+	-$(RM) ..$(SEP)targets$(SEP)65816$(SEP)pictured.s
 	-$(RM) bin$(SEP)debug$(SEP)*.map
 	-$(RM) bin$(SEP)debug$(SEP)*.bin
 	-$(RM) bin$(SEP)debug$(SEP)*.srec
