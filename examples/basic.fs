@@ -13,13 +13,6 @@
     cr
 ;
 
-: max   ( n1 n2 -- max )
-    over over < if
-        swap
-    then
-    drop
-;
-
 : countdown   ( n -- )
     begin
         dup .

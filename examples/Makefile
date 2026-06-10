@@ -17,7 +17,7 @@ bin/debug/basic.bin: obj/debug/vmachine.o obj/debug/basic.o
 bin/debug/fibonacci.bin: obj/debug/vmachine.o obj/debug/fibonacci.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/fibonacci.bin -m bin/debug/fibonacci.map $^
 
-%.s : %.f
+%.s : %.fs
 	$(PYTHON) "..\__main__.py" $<
 
 %.srec : %.bin
