@@ -19,6 +19,7 @@ class TType(Enum):
     COLON       = auto()   # :
     SEMICOLON   = auto()   # ;
     COMMA       = auto()   # ,
+    CCOMMA      = auto()   # c,
     ALLOT       = auto()   # allot
     CREATE      = auto()   # create
     CONSTANT    = auto()   # constant
@@ -47,6 +48,7 @@ KEYWORD_MAP = {
     ':':        TType.COLON,
     ';':        TType.SEMICOLON,
     ',':        TType.COMMA,
+    'c,':       TType.CCOMMA,
     'allot':    TType.ALLOT,
     'create':   TType.CREATE,
     'constant': TType.CONSTANT,

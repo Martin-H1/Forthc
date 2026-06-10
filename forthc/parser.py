@@ -97,8 +97,9 @@ class Parser:
         if tok.type == TType.CREATE:
             self._advance()
             name_tok = self._expect(TType.WORD)
-            size = 0
-            data = []
+            size      = 0
+            data      = []
+            byte_data = []
             if self._match(TType.NUMBER):
                 num_tok = self._advance()
                 if self._match(TType.ALLOT):
@@ -107,7 +108,6 @@ class Parser:
                 elif self._match(TType.COMMA):
                     self._advance()
                     data.append(num_tok.value)
-                    # collect remaining N , pairs
                     while self._match(TType.NUMBER):
                         num_tok = self._advance()
                         if not self._match(TType.COMMA):
@@ -116,11 +116,23 @@ class Parser:
                                 self._peek())
                         self._advance()
                         data.append(num_tok.value)
+                elif self._match(TType.CCOMMA):
+                    self._advance()
+                    byte_data.append(num_tok.value)
+                    while self._match(TType.NUMBER):
+                        num_tok = self._advance()
+                        if not self._match(TType.CCOMMA):
+                            raise ParseError(
+                                "Expected 'c,' after value in create byte data",
+                                self._peek())
+                        self._advance()
+                        byte_data.append(num_tok.value)
                 else:
                     raise ParseError(
-                        "Expected 'allot' or ',' after number in 'create'",
+                        "Expected 'allot', ',' or 'c,' after number in 'create'",
                         self._peek())
-            return CreateDef(name=name_tok.value, size=size, data=data,
+            return CreateDef(name=name_tok.value, size=size,
+                             data=data, byte_data=byte_data,
                              line=tok.line, col=tok.col)
 
         if tok.type == TType.VARIABLE:

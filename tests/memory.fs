@@ -11,7 +11,8 @@ variable foo
     test-move
     test-fill
     test-store-fetch
-    test-table
+    test-word-table
+    test-byte-table
     ." done"
     cr
 ;
@@ -36,10 +37,23 @@ create sine-table
 create rgb-black  0 , 0 , 0 ,
 create rgb-white  255 , 255 , 255 ,
 
-: test-table
+: test-word-table
     cr ." test table" cr
     ." sine-table[0] (expect 0)     = " sine-table @ . cr
     ." sine-table[2] (expect 1000)  = " sine-table 2 cells + @ . cr
     ." sine-table[5] (expect -707)  = " sine-table 5 cells + @ . cr
     ." rgb-white red (expect 255)   = " rgb-white @ . cr
+;
+
+create vowels
+    65 c, 69 c, 73 c, 79 c, 85 c,  \ A E I O U
+
+create msg
+    72 c, 101 c, 108 c, 108 c, 111 c, 0 c,  \ Hello\0
+
+: test-byte-table
+    cr ." byte table test" cr
+    ." vowels[0] (expect 65/A) = " vowels c@ . cr
+    ." vowels[2] (expect 73/I) = " vowels 2 + c@ . cr
+    ." msg as string (expect Hello) = " msg cputs cr
 ;

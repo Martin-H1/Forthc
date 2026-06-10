@@ -352,7 +352,9 @@ class CodeGenerator:
         if node.size:
             parts += [str(node.size), 'allot']
         if node.data:
-            parts += [', '.join(str(v) for v in node.data)]
+            parts.append('...')
+        if node.byte_data:
+            parts.append('... c,')
         self._emit(f'; {" ".join(parts)}')
         self._emit_label(sym)
         if node.size > 0:
@@ -360,6 +362,9 @@ class CodeGenerator:
         if node.data:
             values = ', '.join(f'${_to_u16(v):04X}' for v in node.data)
             self._emit(f'    .word {values}')
+        if node.byte_data:
+            values = ', '.join(f'${v & 0xFF:02X}' for v in node.byte_data)
+            self._emit(f'    .byte {values}')
         self._emit()
         self._creates.add(node.name)
 

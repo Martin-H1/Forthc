@@ -20,13 +20,15 @@ class ASTNode:
 # Top-level definitions
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class CreateDef(ASTNode):
-    name:  str  = ''
-    size:  int  = 0   # number of bytes to allot (0 = no allot clause)
-    data:  list = field(default_factory=list)  # values from , sequences
-    line:  int  = 0
-    col:   int  = 0
+    name:      str  = ''
+    size:      int  = 0    # number of bytes to allot (0 = no allot clause)
+    data:      list = field(default_factory=list)   # cell values from ,
+    byte_data: list = field(default_factory=list)   # byte values from c,
+    line:      int  = 0
+    col:       int  = 0
 
 @dataclass
 class ConstantDef(ASTNode):
