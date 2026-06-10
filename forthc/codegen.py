@@ -45,7 +45,7 @@ from .ast_nodes import (
     DefineDirective, ExportDirective, OriginDirective, SegmentDirective,
     MainDirective, NumberLit, StringLit, PrintString,
     WordCall, IfThen, BeginUntil, BeginWhileRepeat,
-    DoLoop, ASTNode,
+    DoLoop, ASTNode, Comma, CComma
 )
 
 @dataclass
@@ -452,6 +452,12 @@ class CodeGenerator:
 
         elif isinstance(node, DoLoop):
             self._gen_do_loop(node, str_pool)
+
+        elif isinstance(node, Comma):
+            self._emit_instr('CALL vm_comma', 'compiles TOS into memory')
+
+        elif isinstance(node, CComma):
+            self._emit_instr('CALL vm_ccomma', 'compiles TOS LSB into memory')
 
         else:
             raise CodeGenError(f"Unknown statement node {type(node).__name__}", node)

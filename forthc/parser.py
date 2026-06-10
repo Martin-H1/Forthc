@@ -28,8 +28,8 @@ from .tokenizer import Token, TType, TokenizeError
 from .ast_nodes import (
     Program, CreateDef, ConstantDef, VariableDef, WordDef,
     DefineDirective, ExportDirective, OriginDirective, SegmentDirective,
-    MainDirective, NumberLit, StringLit, PrintString, WordCall,
-    IfThen, BeginUntil, BeginWhileRepeat, DoLoop,
+    MainDirective, Comma, CComma, NumberLit, StringLit, PrintString,
+    WordCall, IfThen, BeginUntil, BeginWhileRepeat, DoLoop,
 )
 
 
@@ -236,6 +236,16 @@ class Parser:
         if tok.type == TType.NUMBER:
             self._advance()
             return NumberLit(value=tok.value, line=tok.line, col=tok.col)
+
+        # Bare , inside a body is valid
+        if tok.type == TType.COMMA:
+            self._advance()
+            return Comma(text=tok.value, line=tok.line, col=tok.col)
+
+        # Bare c, inside a body is valid
+        if tok.type == TType.CCOMMA:
+            self._advance()
+            return CComma(text=tok.value, line=tok.line, col=tok.col)
 
         raise ParseError("Unexpected token in word body", tok)
 

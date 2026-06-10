@@ -82,6 +82,18 @@ class MainDirective(ASTNode):
 # ---------------------------------------------------------------------------
 
 @dataclass
+class Comma(ASTNode):
+    ', →  compiles TOS cell into memory.'
+    text: str = ''
+
+
+@dataclass
+class CComma(ASTNode):
+    ', →  compiles TOS LSB into memory.'
+    text: str = ''
+
+
+@dataclass
 class NumberLit(ASTNode):
     """A numeric literal pushes its value onto the stack."""
     value: int = 0

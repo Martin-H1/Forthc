@@ -13,6 +13,8 @@ variable foo
     test-store-fetch
     test-word-table
     test-byte-table
+    test-comma
+    test-ccomma
     ." done"
     cr
 ;
@@ -56,4 +58,24 @@ create msg
     ." vowels[0] (expect 65/A) = " vowels c@ . cr
     ." vowels[2] (expect 73/I) = " vowels 2 + c@ . cr
     ." msg as string (expect Hello) = " msg cputs cr
+;
+
+: test-comma
+    cr ." test ," cr
+    here
+    0 , 707 , 1000 , 707 , 0 , -707 , -1000 , -707 ,
+    dup @ . cell+
+    dup @ . cell+
+    dup @ . cell+
+    dup @ . cell+
+    dup @ . cell+
+    dup @ . cell+
+    dup @ . cell+
+    dup @ . cell+
+;
+
+: test-ccomma
+    cr ." test c," cr
+    here
+    72 c, 101 c, 108 c, 108 c, 111 c, 0 c, cputs cr
 ;
