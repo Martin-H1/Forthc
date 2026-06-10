@@ -98,15 +98,29 @@ class Parser:
             self._advance()
             name_tok = self._expect(TType.WORD)
             size = 0
+            data = []
             if self._match(TType.NUMBER):
                 num_tok = self._advance()
-                if not self._match(TType.ALLOT):
+                if self._match(TType.ALLOT):
+                    self._advance()
+                    size = num_tok.value
+                elif self._match(TType.COMMA):
+                    self._advance()
+                    data.append(num_tok.value)
+                    # collect remaining N , pairs
+                    while self._match(TType.NUMBER):
+                        num_tok = self._advance()
+                        if not self._match(TType.COMMA):
+                            raise ParseError(
+                                "Expected ',' after value in create data",
+                                self._peek())
+                        self._advance()
+                        data.append(num_tok.value)
+                else:
                     raise ParseError(
-                        "Expected 'allot' after number in 'create' definition",
+                        "Expected 'allot' or ',' after number in 'create'",
                         self._peek())
-                self._advance()   # consume 'allot'
-                size = num_tok.value
-            return CreateDef(name=name_tok.value, size=size,
+            return CreateDef(name=name_tok.value, size=size, data=data,
                              line=tok.line, col=tok.col)
 
         if tok.type == TType.VARIABLE:

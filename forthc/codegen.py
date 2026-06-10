@@ -348,13 +348,18 @@ class CodeGenerator:
 
     def _gen_create(self, node: CreateDef):
         sym = _mangle(node.name)
-
-        # self._emit(f'; create {node.name}')
-        comment = f'create {node.name}' + (f' {node.size} allot' if node.size else '')
-        self._emit(f'; {comment}')
+        parts = ['create', node.name]
+        if node.size:
+            parts += [str(node.size), 'allot']
+        if node.data:
+            parts += [', '.join(str(v) for v in node.data)]
+        self._emit(f'; {" ".join(parts)}')
         self._emit_label(sym)
         if node.size > 0:
             self._emit(f'    .res {node.size}')
+        if node.data:
+            values = ', '.join(f'${_to_u16(v):04X}' for v in node.data)
+            self._emit(f'    .word {values}')
         self._emit()
         self._creates.add(node.name)
 

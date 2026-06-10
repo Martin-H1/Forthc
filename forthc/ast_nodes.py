@@ -21,12 +21,12 @@ class ASTNode:
 # ---------------------------------------------------------------------------
 
 @dataclass
-class CreateDef:
-    """create foo  allot 14 →  foo: .res 14"""
-    name:  str
-    size:  int        # number of bytes to allot (0 = no allot clause)
-    line:  int = 0
-    col:   int = 0
+class CreateDef(ASTNode):
+    name:  str  = ''
+    size:  int  = 0   # number of bytes to allot (0 = no allot clause)
+    data:  list = field(default_factory=list)  # values from , sequences
+    line:  int  = 0
+    col:   int  = 0
 
 @dataclass
 class ConstantDef(ASTNode):
