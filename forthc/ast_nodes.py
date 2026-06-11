@@ -23,12 +23,37 @@ class ASTNode:
 
 @dataclass
 class CreateDef(ASTNode):
-    name:      str  = ''
-    size:      int  = 0    # number of bytes to allot (0 = no allot clause)
-    data:      list = field(default_factory=list)   # cell values from ,
-    byte_data: list = field(default_factory=list)   # byte values from c,
-    line:      int  = 0
-    col:       int  = 0
+    """create name [struct-ref] [allot | data-sequence]"""
+    name:       str  = ''
+    size:       int  = 0        # from allot (0 = no allot)
+    data:       list = field(default_factory=list)   # list of DataItem
+    struct_ref: str  = ''       # struct name if specified, documentary only
+    line:       int  = 0
+    col:        int  = 0
+
+
+@dataclass
+class FieldDef:
+    """One field in a .struct definition."""
+    name: str = ''
+    size: int = 0     # bytes; 0 = cell (substituted in codegen), -1 = variable (?)
+    line: int = 0
+    col:  int = 0
+
+
+@dataclass
+class StructDef(ASTNode):
+    """.struct name .field ... .end-struct"""
+    name:   str  = ''
+    fields: list = field(default_factory=list)  # list of FieldDef
+
+
+@dataclass
+class DataItem:
+    """One item in a create data sequence."""
+    kind:  str    = ''      # 'cell', 'byte', 'string', 'zstring'
+    value: object = None    # int for cell/byte, str for string/zstring/label
+
 
 @dataclass
 class ConstantDef(ASTNode):

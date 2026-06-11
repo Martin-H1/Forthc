@@ -15,6 +15,7 @@ variable foo
     test-byte-table
     test-comma
     test-ccomma
+    test-struct
     ." done"
     cr
 ;
@@ -78,4 +79,42 @@ create msg
     cr ." test c," cr
     here
     72 c, 101 c, 108 c, 108 c, 111 c, 0 c, cputs cr
+;
+
+\ struct tests
+.struct point
+    .field x cell
+    .field y cell
+.end-struct
+
+.struct rgb
+    .field red   1
+    .field green 1
+    .field blue  1
+.end-struct
+
+.struct header
+    .field previous cell
+    .field flags    1
+    .field namelen  1
+    .field cfa      cell
+    .field name     ?
+.end-struct
+
+create origin  point  0 , 0 ,
+create red-color rgb  255 c, 0 c, 0 c,
+create greeting header  0 , 0 c, 5 c, 0 , Z" hello"
+
+: test-struct
+    cr ." struct test" cr
+    ." point_x_sizeof (expect 0)  = " point_x . cr
+    ." point_y (expect 2)         = " point_y . cr
+    ." point_sizeof (expect 4)    = " point_sizeof . cr
+    ." rgb_sizeof (expect 3)      = " rgb_sizeof . cr
+    ." header_fixed_sizeof (expect 6) = " header_fixed_sizeof . cr
+    ." origin x (expect 0)  = " origin point_x + @ . cr
+    ." origin y (expect 0)  = " origin point_y + @ . cr
+    ." red-color red (expect 255) = " red_color rgb_red + c@ . cr
+    ." greeting namelen (expect 5) = " greeting header_namelen + c@ . cr
+    ." greeting name (expect hello) = " greeting header_name + cputs cr
 ;

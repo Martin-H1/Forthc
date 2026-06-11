@@ -42,6 +42,10 @@ class TType(Enum):
     ORIGIN      = auto()   # .origin  (extension: set origin address)
     SEGMENT     = auto()   # .segment (extension: set segment name)
     MAIN        = auto()   # .main    (extension: designate entry-point word)
+    STRUCT      = auto()   # .struct
+    FIELD       = auto()   # .field
+    ENDSTRUCT   = auto()   # .end-struct
+    ZQUOTE      = auto()   # Z"  (null-terminated string literal)
     EOF         = auto()
 
 KEYWORD_MAP = {
@@ -68,6 +72,9 @@ KEYWORD_MAP = {
     '.origin':  TType.ORIGIN,
     '.segment': TType.SEGMENT,
     '.main':    TType.MAIN,
+    '.struct':      TType.STRUCT,
+    '.field':       TType.FIELD,
+    '.end-struct':  TType.ENDSTRUCT,
 }
 
 
@@ -182,14 +189,19 @@ def tokenize(source: str) -> list:
         tok_line, tok_col = line, col
 
         # String literals: ." or S"
-        if source[pos:pos+2] in ('."', 'S"', 's"'):
+        if source[pos:pos+2] in ('."', 'S"', 's"', 'Z"', 'z"'):
             intro = source[pos:pos+2].upper()
             advance(2)
             # consume exactly one space separator
             if pos < n and source[pos] == ' ':
                 advance()
             payload = read_string(intro)
-            ttype = TType.DOTQUOTE if intro == '."' else TType.SQUOTE
+            if intro == '."':
+                ttype = TType.DOTQUOTE
+            elif intro == 'S"':
+                ttype = TType.SQUOTE
+            else:                           # Z"
+                ttype = TType.ZQUOTE
             tokens.append(Token(ttype, payload, tok_line, tok_col))
             continue
 

@@ -26,7 +26,8 @@ Grammar (informal):
 
 from .tokenizer import Token, TType, TokenizeError
 from .ast_nodes import (
-    Program, CreateDef, ConstantDef, VariableDef, WordDef,
+    Program, CreateDef, StructDef, FieldDef, DataItem,
+    ConstantDef, VariableDef, WordDef,
     DefineDirective, ExportDirective, OriginDirective, SegmentDirective,
     MainDirective, Comma, CComma, NumberLit, StringLit, PrintString,
     WordCall, IfThen, BeginUntil, BeginWhileRepeat, DoLoop,
@@ -43,6 +44,7 @@ class Parser:
     def __init__(self, tokens: list[Token]):
         self._tokens = tokens
         self._pos    = 0
+        self._struct_names: set = set()
 
     # ------------------------------------------------------------------
     # Helpers
@@ -66,6 +68,41 @@ class Parser:
     def _match(self, *types: TType) -> bool:
         return self._peek().type in types
 
+    def _data_sequence(self) -> list:
+        """Collect remaining items in a mixed cell/byte/string data sequence."""
+        items = []
+        while True:
+            if self._match(TType.NUMBER):
+                num_tok = self._advance()
+                if self._match(TType.COMMA):
+                    self._advance()
+                    items.append(DataItem(kind='cell', value=num_tok.value))
+                elif self._match(TType.CCOMMA):
+                    self._advance()
+                    items.append(DataItem(kind='byte', value=num_tok.value))
+                else:
+                    raise ParseError(
+                        "Expected ',' or 'c,' after number in data sequence",
+                        self._peek())
+            elif self._match(TType.WORD):
+                lbl_tok = self._advance()
+                if self._match(TType.COMMA):
+                    self._advance()
+                    items.append(DataItem(kind='cell', value=lbl_tok.value))
+                else:
+                    raise ParseError(
+                        "Expected ',' after label in data sequence",
+                        self._peek())
+            elif self._match(TType.SQUOTE):
+                tok2 = self._advance()
+                items.append(DataItem(kind='string', value=tok2.value))
+            elif self._match(TType.ZQUOTE):
+                tok2 = self._advance()
+                items.append(DataItem(kind='zstring', value=tok2.value))
+            else:
+                break
+        return items
+
     # ------------------------------------------------------------------
     # Top level
     # ------------------------------------------------------------------
@@ -80,6 +117,11 @@ class Parser:
 
     def _top_def(self):
         tok = self._peek()
+
+        if tok.type == TType.STRUCT:
+            node = self._struct_def()
+            self._struct_names.add(node.name)
+            return node
 
         if tok.type == TType.NUMBER:
             # Could be  <number> constant <name>
@@ -96,10 +138,16 @@ class Parser:
 
         if tok.type == TType.CREATE:
             self._advance()
-            name_tok = self._expect(TType.WORD)
-            size      = 0
-            data      = []
-            byte_data = []
+            name_tok   = self._expect(TType.WORD)
+            size       = 0
+            data       = []
+            struct_ref = ''
+
+            # Optional struct reference (documentary)
+            if (self._match(TType.WORD) and
+                    self._peek().value in self._struct_names):
+                struct_ref = self._advance().value
+
             if self._match(TType.NUMBER):
                 num_tok = self._advance()
                 if self._match(TType.ALLOT):
@@ -107,32 +155,37 @@ class Parser:
                     size = num_tok.value
                 elif self._match(TType.COMMA):
                     self._advance()
-                    data.append(num_tok.value)
-                    while self._match(TType.NUMBER):
-                        num_tok = self._advance()
-                        if not self._match(TType.COMMA):
-                            raise ParseError(
-                                "Expected ',' after value in create data",
-                                self._peek())
-                        self._advance()
-                        data.append(num_tok.value)
+                    data.append(DataItem(kind='cell', value=num_tok.value))
+                    data.extend(self._data_sequence())
                 elif self._match(TType.CCOMMA):
                     self._advance()
-                    byte_data.append(num_tok.value)
-                    while self._match(TType.NUMBER):
-                        num_tok = self._advance()
-                        if not self._match(TType.CCOMMA):
-                            raise ParseError(
-                                "Expected 'c,' after value in create byte data",
-                                self._peek())
-                        self._advance()
-                        byte_data.append(num_tok.value)
+                    data.append(DataItem(kind='byte', value=num_tok.value))
+                    data.extend(self._data_sequence())
                 else:
                     raise ParseError(
                         "Expected 'allot', ',' or 'c,' after number in 'create'",
                         self._peek())
-            return CreateDef(name=name_tok.value, size=size,
-                             data=data, byte_data=byte_data,
+            elif self._match(TType.WORD):
+                lbl_tok = self._advance()
+                if self._match(TType.COMMA):
+                    self._advance()
+                    data.append(DataItem(kind='cell', value=lbl_tok.value))
+                    data.extend(self._data_sequence())
+                else:
+                    raise ParseError(
+                        "Expected ',' after label in create data",
+                        self._peek())
+            elif self._match(TType.SQUOTE):
+                tok2 = self._advance()
+                data.append(DataItem(kind='string', value=tok2.value))
+                data.extend(self._data_sequence())
+            elif self._match(TType.ZQUOTE):
+                tok2 = self._advance()
+                data.append(DataItem(kind='zstring', value=tok2.value))
+                data.extend(self._data_sequence())
+
+            return CreateDef(name=name_tok.value, size=size, data=data,
+                             struct_ref=struct_ref,
                              line=tok.line, col=tok.col)
 
         if tok.type == TType.VARIABLE:
@@ -178,6 +231,39 @@ class Parser:
                                  line=tok.line, col=tok.col)
 
         raise ParseError("Unexpected token at top level", tok)
+
+    def _struct_def(self) -> StructDef:
+        self._advance()                     # consume '.struct'
+        name_tok = self._expect(TType.WORD)
+        node = StructDef(name=name_tok.value,
+                         line=name_tok.line, col=name_tok.col)
+        while not self._match(TType.ENDSTRUCT, TType.EOF):
+            if self._match(TType.FIELD):
+                self._advance()             # consume '.field'
+                fname = self._expect(TType.WORD)
+                stok  = self._peek()
+                if stok.type == TType.NUMBER:
+                    self._advance()
+                    size = stok.value
+                elif stok.type == TType.WORD and stok.value == 'cell':
+                    self._advance()
+                    size = 0                # 0 = cell, substituted in codegen
+                elif stok.type == TType.WORD and stok.value == '?':
+                    self._advance()
+                    size = -1               # -1 = variable length
+                else:
+                    raise ParseError(
+                        "Expected size, 'cell', or '?' after field name",
+                        stok)
+                node.fields.append(FieldDef(
+                    name=fname.value, size=size,
+                    line=fname.line, col=fname.col))
+            else:
+                raise ParseError(
+                    "Expected '.field' inside '.struct'",
+                    self._peek())
+        self._expect(TType.ENDSTRUCT)
+        return node
 
     # ------------------------------------------------------------------
     # Word definition

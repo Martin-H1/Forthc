@@ -41,7 +41,8 @@ import io
 import re
 
 from .ast_nodes import (
-    Program, CreateDef, ConstantDef, VariableDef, WordDef,
+    Program, CreateDef, StructDef, FieldDef, DataItem,
+    ConstantDef, VariableDef, WordDef,
     DefineDirective, ExportDirective, OriginDirective, SegmentDirective,
     MainDirective, NumberLit, StringLit, PrintString,
     WordCall, IfThen, BeginUntil, BeginWhileRepeat,
@@ -242,6 +243,7 @@ class CodeGenerator:
     _label_count: int    = field(default=0, init=False)
     _constants:   dict   = field(default_factory=dict, init=False)
     _creates:     set    = field(default_factory=set, init=False)
+    _structs:     dict   = field(default_factory=dict, init=False)
     _variables:   set    = field(default_factory=set, init=False)
     _words:       set    = field(default_factory=set, init=False)
     _exports:     set    = field(default_factory=set, init=False)
@@ -341,6 +343,8 @@ class CodeGenerator:
             self._gen_origin(node)
         elif isinstance(node, SegmentDirective):
             self._gen_segment(node)
+        elif isinstance(node, StructDef):
+            self._gen_struct(node)
         elif isinstance(node, MainDirective):
             self._gen_main(node)
         else:
@@ -348,25 +352,68 @@ class CodeGenerator:
 
     def _gen_create(self, node: CreateDef):
         sym = _mangle(node.name)
-        parts = ['create', node.name]
+        comment = f'create {node.name}'
+        if node.struct_ref:
+            comment += f' ({node.struct_ref})'
         if node.size:
-            parts += [str(node.size), 'allot']
-        if node.data:
-            parts.append('...')
-        if node.byte_data:
-            parts.append('... c,')
-        self._emit(f'; {" ".join(parts)}')
+            comment += f' {node.size} allot'
+        self._emit(f'; {comment}')
         self._emit_label(sym)
         if node.size > 0:
             self._emit(f'    .res {node.size}')
-        if node.data:
-            values = ', '.join(f'${_to_u16(v):04X}' for v in node.data)
-            self._emit(f'    .word {values}')
-        if node.byte_data:
-            values = ', '.join(f'${v & 0xFF:02X}' for v in node.byte_data)
-            self._emit(f'    .byte {values}')
+        # emit data items, grouping consecutive same-kind items
+        i = 0
+        while i < len(node.data):
+            item = node.data[i]
+            if item.kind == 'cell':
+                vals = []
+                while i < len(node.data) and node.data[i].kind == 'cell':
+                    v = node.data[i].value
+                    vals.append(f'${_to_u16(v):04X}' if isinstance(v, int)
+                                else _mangle(str(v)))
+                    i += 1
+                self._emit(f'    .word {", ".join(vals)}')
+            elif item.kind == 'byte':
+                vals = []
+                while i < len(node.data) and node.data[i].kind == 'byte':
+                    v = node.data[i].value
+                    vals.append(f'${v & 0xFF:02X}' if isinstance(v, int)
+                                else _mangle(str(v)))
+                    i += 1
+                self._emit(f'    .byte {", ".join(vals)}')
+            elif item.kind == 'string':
+                escaped = item.value.replace('"', '\\"')
+                self._emit(f'    .byte "{escaped}"')
+                i += 1
+            elif item.kind == 'zstring':
+                escaped = item.value.replace('"', '\\"')
+                self._emit(f'    .byte "{escaped}", 0')
+                i += 1
+            else:
+                i += 1
         self._emit()
         self._creates.add(node.name)
+
+    def _gen_struct(self, node: StructDef):
+        self._emit(f'; struct {node.name}')
+        offset      = 0
+        has_variable = False
+        for f in node.fields:
+            sym = f'{_mangle(node.name)}_{_mangle(f.name)}'
+            if f.size == -1:
+                # variable length — emit offset then stop accumulating
+                self._emit(f'{sym} = {offset}')
+                has_variable = True
+                break
+            size = 2 if f.size == 0 else f.size     # 0 = cell = 2 bytes
+            self._emit(f'{sym} = {offset}')
+            offset += size
+        if has_variable:
+            self._emit(f'{_mangle(node.name)}_fixed_sizeof = {offset}')
+        else:
+            self._emit(f'{_mangle(node.name)}_sizeof = {offset}')
+        self._emit()
+        self._structs[node.name] = node
 
     def _gen_constant(self, node: ConstantDef):
         sym = _mangle(node.name)
