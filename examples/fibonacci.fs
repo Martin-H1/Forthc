@@ -35,7 +35,7 @@
     begin
         dup fib .
         cr
-        1 +
+        1+
         dup max-fib >
     until
     drop
