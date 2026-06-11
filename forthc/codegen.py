@@ -396,22 +396,31 @@ class CodeGenerator:
 
     def _gen_struct(self, node: StructDef):
         self._emit(f'; struct {node.name}')
-        offset      = 0
+        offset       = 0
         has_variable = False
         for f in node.fields:
-            sym = f'{_mangle(node.name)}_{_mangle(f.name)}'
+            sym        = f'{_mangle(node.name)}_{_mangle(f.name)}'
+            forth_name = f'{node.name}-{f.name}'    # Forth-style name
             if f.size == -1:
-                # variable length — emit offset then stop accumulating
                 self._emit(f'{sym} = {offset}')
+                self._constants[forth_name] = offset
+                self._constants[sym]        = offset
                 has_variable = True
                 break
-            size = 2 if f.size == 0 else f.size     # 0 = cell = 2 bytes
+            size = 2 if f.size == 0 else f.size
             self._emit(f'{sym} = {offset}')
+            self._constants[forth_name] = offset
+            self._constants[sym]        = offset
             offset += size
         if has_variable:
-            self._emit(f'{_mangle(node.name)}_fixed_sizeof = {offset}')
+            sizeof_sym  = f'{_mangle(node.name)}_fixed_sizeof'
+            sizeof_name = f'{node.name}-fixed-sizeof'
         else:
-            self._emit(f'{_mangle(node.name)}_sizeof = {offset}')
+            sizeof_sym  = f'{_mangle(node.name)}_sizeof'
+            sizeof_name = f'{node.name}-sizeof'
+        self._emit(f'{sizeof_sym} = {offset}')
+        self._constants[sizeof_name] = offset
+        self._constants[sizeof_sym]  = offset
         self._emit()
         self._structs[node.name] = node
 
