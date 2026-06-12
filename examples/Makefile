@@ -7,6 +7,7 @@ all: debug
 debug: obj obj/debug bin bin/debug \
 	bin/debug/basic.bin bin/debug/basic.srec \
 	bin/debug/fibonacci.bin bin/debug/fibonacci.srec \
+	bin/debug/hanoi.bin bin/debug/hanoi.srec \
 	bin/debug/mandelbrot.bin bin/debug/mandelbrot.srec \
 	bin/debug/pi.bin bin/debug/pi.srec
 
@@ -25,8 +26,11 @@ bin/debug/basic.bin: obj/debug/vmachine.o obj/debug/basic.o
 bin/debug/fibonacci.bin: obj/debug/vmachine.o obj/debug/fibonacci.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/fibonacci.bin -m bin/debug/fibonacci.map $^
 
+bin/debug/hanoi.bin: obj/debug/vmachine.o obj/debug/hanoi.o
+	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/hanoi.bin -m bin/debug/hanoi.map $^
+
 bin/debug/mandelbrot.bin: obj/debug/vmachine.o obj/debug/core.o obj/debug/mandelbrot.o
-	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/mandelbrot.bin -m bin/debug/pi.map $^
+	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/mandelbrot.bin -m bin/debug/mandelbrot.map $^
 
 bin/debug/pi.bin: obj/debug/vmachine.o obj/debug/core.o obj/debug/pi.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/pi.bin -m bin/debug/pi.map $^
