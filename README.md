@@ -164,6 +164,130 @@ __math_utils_fs__ = 1
 .endif
 ```
 
+### Struct definitions
+
+`.struct` defines a named data structure at compile time. No memory is
+allocated — only offset constants are generated. Memory allocation is a
+separate operation using `create` or `allot`.
+
+```forth
+.struct point
+    .field x cell
+    .field y cell
+.end-struct
+```
+
+Generates assembler constants:
+
+```asm
+point_x      = 0
+point_y      = 2
+point_sizeof = 4
+```
+
+Field sizes can be specified in bytes or as `cell` (target cell size, 2 bytes
+on the 65816):
+
+```forth
+.struct header
+    .field previous cell   \ 2 bytes
+    .field flags    1      \ 1 byte
+    .field namelen  1      \ 1 byte
+    .field cfa      cell   \ 2 bytes
+    .field name     ?      \ variable length — must be last field
+.end-struct
+```
+
+When a `?` field is present the size constant is named `_fixed_sizeof` to
+remind the programmer that the variable-length payload is not included:
+
+```asm
+header_previous     = 0
+header_flags        = 2
+header_namelen      = 3
+header_cfa          = 4
+header_name         = 6
+header_fixed_sizeof = 6
+```
+
+**Allocating instances:**
+
+Static instances are created with `create`. The struct name after the
+instance name is optional and documentary only — the programmer is
+responsible for providing the correct data:
+
+```forth
+create origin    point   0 , 0 ,
+create red-color rgb     255 c, 0 c, 0 c,
+create greeting  header  0 , 0 c, 5 c, 0 , Z" hello"
+```
+
+Runtime instances reserve space from the dictionary:
+
+```forth
+point_sizeof allot   \ reserve space for one point at runtime
+```
+
+**Accessing fields:**
+
+Field offset constants are added to the base address and then fetched:
+
+```forth
+origin point_x + @        \ fetch x field of origin
+red-color rgb_red + c@    \ fetch red field of red-color
+```
+
+**Naming conventions:**
+
+Word names use hyphens (`red-color`, `my-buffer`) following Forth convention.
+Struct field constants use underscores (`rgb_red`, `point_x`) because they
+are compiler-generated. Always reference instances by their original
+hyphenated Forth name — the compiler handles mangling to assembler labels
+transparently:
+
+```forth
+create red-color rgb  255 c, 0 c, 0 c,  \ defined as red-color
+...
+red-color rgb_red + c@    \ correct — use original hyphenated name
+red_color rgb_red + c@    \ wrong — red_color not found in compiler
+```
+
+**Defining words (`does>`):**
+
+`does>` creates a defining word — a word that generates new named words
+with custom runtime behavior. The primary use case is typed array
+abstractions:
+
+```forth
+: array      ( n -- ) create cells allot does> swap cells + ;
+: byte-array ( n -- ) create allot       does> swap + ;
+
+10 array      my-array    \ creates a 10-cell array
+20 byte-array my-bytes    \ creates a 20-byte array
+```
+
+When `my-array` is referenced in a word body it receives an index on the
+stack and pushes the address of that element:
+
+```forth
+3 my-array          \ ( index -- addr )  address of element 3
+42 3 my-array !     \ store 42 at element 3
+3 my-array @        \ fetch element 3
+```
+
+The compiler resolves `does>` entirely at compile time — no runtime
+dictionary modification occurs. The setup body (`create cells allot`) is
+evaluated symbolically to determine the static allocation size, and a
+`.res N` directive is emitted in the assembler output.
+
+Supported setup body patterns:
+
+| Setup body | Args | Allocation |
+|---|---|---|
+| `create` | none | label only, no allocation |
+| `create allot` | `n` | `.res n` bytes |
+| `create cells allot` | `n` | `.res n*2` bytes |
+
 ---
 
 ## VM instruction set
