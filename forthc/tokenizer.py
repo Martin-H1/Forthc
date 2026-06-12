@@ -24,6 +24,7 @@ class TType(Enum):
     CREATE      = auto()   # create
     CONSTANT    = auto()   # constant
     VARIABLE    = auto()   # variable
+    DOES        = auto()   # does>
     IF          = auto()   # if
     ELSE        = auto()   # else
     THEN        = auto()   # then
@@ -57,6 +58,7 @@ KEYWORD_MAP = {
     'create':   TType.CREATE,
     'constant': TType.CONSTANT,
     'variable': TType.VARIABLE,
+    'does>':    TType.DOES,
     'if':       TType.IF,
     'else':     TType.ELSE,
     'then':     TType.THEN,

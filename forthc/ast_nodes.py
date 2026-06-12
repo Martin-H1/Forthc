@@ -74,6 +74,22 @@ class WordDef(ASTNode):
     name: str        = ''
     body: list       = field(default_factory=list)
 
+
+@dataclass
+class DefiningWord(ASTNode):
+    """: name setup-body does> does-body ;"""
+    name:      str  = ''
+    setup:     list = field(default_factory=list)
+    does_body: list = field(default_factory=list)
+
+@dataclass
+class DefiningCall(ASTNode):
+    """args defining-word new-name — top level use of a defining word"""
+    defining_word: str  = ''
+    new_name:      str  = ''
+    args:          list = field(default_factory=list)
+
+
 @dataclass
 class DefineDirective(ASTNode):
     """.define FOO  →  define an assembler symbol with no value (for guards)."""

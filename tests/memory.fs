@@ -15,6 +15,7 @@ variable foo
     test-byte-table
     test-comma
     test-ccomma
+    test-does
     test-struct
     ." done"
     cr
@@ -79,6 +80,30 @@ create msg
     cr ." test c," cr
     here
     72 c, 101 c, 108 c, 108 c, 111 c, 0 c, cputs cr
+;
+
+: array      ( n -- ) create cells allot does> swap cells + ;
+: byte-array ( n -- ) create allot       does> swap + ;
+
+10 array      my-array
+20 byte-array my-bytes
+
+: test-does
+    cr ." does> test" cr
+    \ verify element spacing
+    ." my-array[1] - my-array[0] (expect 2) = "
+    1 my-array 0 my-array - . cr
+    ." my-array[3] - my-array[0] (expect 6) = "
+    3 my-array 0 my-array - . cr
+    ." my-bytes[3] - my-bytes[0] (expect 3) = "
+    3 my-bytes 0 my-bytes - . cr
+    ." my-bytes[5] - my-bytes[0] (expect 5) = "
+    5 my-bytes 0 my-bytes - . cr
+    \ store and fetch
+    42 3 my-array !
+    ." my-array[3] value (expect 42) = " 3 my-array @ . cr
+    65 5 my-bytes c!
+    ." my-bytes[5] value (expect 65) = " 5 my-bytes c@ . cr
 ;
 
 \ struct tests

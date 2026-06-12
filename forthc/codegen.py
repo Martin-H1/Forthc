@@ -46,7 +46,7 @@ from .ast_nodes import (
     DefineDirective, ExportDirective, OriginDirective, SegmentDirective,
     MainDirective, NumberLit, StringLit, PrintString,
     WordCall, IfThen, BeginUntil, BeginWhileRepeat,
-    DoLoop, ASTNode, Comma, CComma
+    DoLoop, ASTNode, Comma, CComma, DefiningWord, DefiningCall,
 )
 
 @dataclass
@@ -251,6 +251,8 @@ class CodeGenerator:
     _defines:     set    = field(default_factory=set, init=False)
     _str_count:   int    = field(default=0, init=False)
     _entry_word:  object = field(default=None, init=False)
+    _defining_words: dict = field(default_factory=dict, init=False)
+    _does_words:     set  = field(default_factory=set,  init=False)
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -330,6 +332,10 @@ class CodeGenerator:
     def _top_def(self, node: ASTNode):
         if isinstance(node, CreateDef):
             self._gen_create(node)
+        elif isinstance(node, DefiningWord):
+            self._gen_defining_word(node)
+        elif isinstance(node, DefiningCall):
+            self._gen_defining_call(node)
         elif isinstance(node, ConstantDef):
             self._gen_constant(node)
         elif isinstance(node, VariableDef):
@@ -394,6 +400,69 @@ class CodeGenerator:
                 i += 1
         self._emit()
         self._creates.add(node.name)
+
+    def _gen_defining_call(self, node: DefiningCall):
+        sym     = _mangle(node.new_name)
+        def_node = self._defining_words.get(node.defining_word)
+        does_sym = f'{_mangle(node.defining_word)}_does'
+        size    = self._eval_setup_size(def_node, node.args) if def_node else 0
+
+        self._emit(f'; {node.defining_word} {node.new_name}')
+        # _does stub: push data address then execute does> body
+        self._emit_label(f'{sym}_does')
+        self._emit_instr(f'LIT {sym}', f'push data address of {node.new_name}')
+        self._emit_instr(f'CALL {does_sym}', f'execute does> body of {node.defining_word}')
+        self._emit_instr('EXIT')
+        # data label and allocation
+        self._emit_label(sym)
+        if size > 0:
+            self._emit(f'    .res {size}')
+        self._emit()
+        # register so body references emit CALL sym_does
+        self._does_words.add(node.new_name)
+        self._creates.add(node.new_name)
+
+    def _gen_defining_word(self, node: DefiningWord):
+        self._defining_words[node.name] = node
+        sym = _mangle(node.name)
+        # does> body — runs when a created word is executed
+        self._emit(f'; defining word: {node.name}')
+        does_sym = f'{sym}_does'
+        self._emit_label(does_sym)
+        str_pool = []
+        self._gen_body(node.does_body, str_pool)
+        self._emit_instr('EXIT', 'return from does> body')
+        for lbl, text in str_pool:
+            self._emit_label(lbl)
+            escaped = text.replace('"', '\\"')
+            self._emit(f'    .byte "{escaped}", 0')
+        self._emit()
+        # Note: setup body is not emitted — it is only used at compile time
+        # by _eval_setup_size to determine allocation size.
+
+    def _eval_setup_size(self, node: DefiningWord, args: list) -> int:
+        CELL_SIZE = 2
+        words = [item.name.lower() for item in node.setup
+                 if isinstance(item, WordCall)]
+        lits  = [item.value for item in node.setup
+                 if isinstance(item, NumberLit)]
+
+        if words == ['create']:
+            return 0
+
+        if words == ['create', 'allot']:
+            if lits:
+                return lits[0]              # create N allot
+            if args:
+                return args[0].value        # create allot with arg
+            return 0
+
+        if words == ['create', 'cells', 'allot']:
+            n = lits[0] if lits else (args[0].value if args else 0)
+            return n * CELL_SIZE
+
+        self._emit('; warning: unknown setup pattern, no .res emitted')
+        return 0
 
     def _gen_struct(self, node: StructDef):
         self._emit(f'; struct {node.name}')
@@ -533,6 +602,12 @@ class CodeGenerator:
         if name in RUNTIME_CALLS:
             target = RUNTIME_CALLS[name]
             self._emit_instr(f'CALL {target}', f'( {name} )')
+            return
+
+        # does-word — call its _does stub
+        if name in self._does_words:
+            sym = _mangle(name)
+            self._emit_instr(f'CALL {sym}_does', f'( {name} )')
             return
 
         # Known constant — compile-time fold to LIT

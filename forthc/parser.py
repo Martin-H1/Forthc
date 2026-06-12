@@ -27,7 +27,7 @@ Grammar (informal):
 from .tokenizer import Token, TType, TokenizeError
 from .ast_nodes import (
     Program, CreateDef, StructDef, FieldDef, DataItem,
-    ConstantDef, VariableDef, WordDef,
+    ConstantDef, VariableDef, WordDef, DefiningWord, DefiningCall,
     DefineDirective, ExportDirective, OriginDirective, SegmentDirective,
     MainDirective, Comma, CComma, NumberLit, StringLit, PrintString,
     WordCall, IfThen, BeginUntil, BeginWhileRepeat, DoLoop,
@@ -45,6 +45,7 @@ class Parser:
         self._tokens = tokens
         self._pos    = 0
         self._struct_names: set = set()
+        self._defining_words: set = set()
 
     # ------------------------------------------------------------------
     # Helpers
@@ -103,6 +104,17 @@ class Parser:
                 break
         return items
 
+    def _defining_call(self, tok, args=None) -> DefiningCall:
+        if args is None:
+            args = []
+        def_tok  = self._advance()          # consume defining word name
+        name_tok = self._expect(TType.WORD) # new name
+        return DefiningCall(
+            defining_word=def_tok.value,
+            new_name=name_tok.value,
+            args=args,
+            line=tok.line, col=tok.col)
+
     # ------------------------------------------------------------------
     # Top level
     # ------------------------------------------------------------------
@@ -123,17 +135,34 @@ class Parser:
             self._struct_names.add(node.name)
             return node
 
+        # Check for defining word call: [args...] defining-word new-name
+        if (tok.type == TType.WORD and tok.value in self._defining_words):
+            return self._defining_call(tok)
+
         if tok.type == TType.NUMBER:
-            # Could be  <number> constant <name>
+            # collect leading numbers - could be args to a defining word call
+            saved_pos = self._pos
+            args = []
+            while self._match(TType.NUMBER):
+                num_tok = self._advance()
+                args.append(NumberLit(value=num_tok.value,
+                                      line=num_tok.line, col=num_tok.col))
+            # check if next token is a defining word
+            if (self._match(TType.WORD) and
+                    self._peek().value in self._defining_words):
+                return self._defining_call(tok, args)
+            # not a defining call - restore position and handle normally
+            self._pos = saved_pos
             num_tok = self._advance()
             if self._match(TType.CONSTANT):
-                self._advance()  # consume 'constant'
+                self._advance()
                 name_tok = self._expect(TType.WORD)
                 return ConstantDef(name=name_tok.value, value=num_tok.value,
                                    line=num_tok.line, col=num_tok.col)
             else:
                 raise ParseError(
-                    "Bare number at top level must be followed by 'constant'",
+                    "Bare number at top level must be followed by "
+                    "'constant' or a defining word",
                     num_tok)
 
         if tok.type == TType.CREATE:
@@ -269,12 +298,23 @@ class Parser:
     # Word definition
     # ------------------------------------------------------------------
 
-    def _word_def(self) -> WordDef:
+    def _word_def(self) -> WordDef | DefiningWord:
         colon_tok = self._advance()            # consume ':'
         name_tok  = self._expect(TType.WORD)   # word name
-        body      = self._body()
+        setup     = self._body()
+        if self._match(TType.DOES):
+            self._advance()                    # consume 'does>'
+            does_body = self._body()
+            self._expect(TType.SEMICOLON)
+            node = DefiningWord(
+                name=name_tok.value,
+                setup=setup,
+                does_body=does_body,
+                line=colon_tok.line, col=colon_tok.col)
+            self._defining_words.add(name_tok.value)
+            return node
         self._expect(TType.SEMICOLON)
-        return WordDef(name=name_tok.value, body=body,
+        return WordDef(name=name_tok.value, body=setup,
                        line=colon_tok.line, col=colon_tok.col)
 
     # ------------------------------------------------------------------
@@ -286,12 +326,21 @@ class Parser:
         while not self._match(TType.SEMICOLON, TType.ELSE,
                                TType.THEN, TType.UNTIL,
                                TType.WHILE, TType.REPEAT,
-                               TType.LOOP, TType.PLUSLOOP, TType.EOF):
+                               TType.LOOP, TType.PLUSLOOP,
+                               TType.DOES, TType.EOF):
             stmts.append(self._stmt())
         return stmts
 
     def _stmt(self):
         tok = self._peek()
+
+        if tok.type == TType.CREATE:
+            self._advance()
+            return WordCall(name='create', line=tok.line, col=tok.col)
+
+        if tok.type == TType.ALLOT:
+            self._advance()
+            return WordCall(name='allot', line=tok.line, col=tok.col)
 
         if tok.type == TType.NUMBER:
             self._advance()
