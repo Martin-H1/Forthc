@@ -1,41 +1,31 @@
-\ Example Forth program: fibonacci and string output
+\ Example Forth program: fibonacci sequence
 \ Demonstrates constants, word definitions, if/then, begin/until
-
 .main print-fibs
 
 15 constant max-fib
 
-\ Fibonacci — iterative version
-\ ( n -- fib(n) )
-: fib
+: fib ( n -- fib(n) )
     dup 2 < if
         drop 1
     else
-        0 1            \ a=0, b=1
-        rot            \ n a b  →  reorder: b a n
-        swap           \ n b a   hmm; let's keep it simple
-        drop           \ discard
-        \ Actually use begin/until loop:
-        1              \ counter
+        1 - >r          \ save iteration count on R
+        1 1             \ seed: a=1 b=1
         begin
-            over over + \ a b  →  a b (a+b)
-            rot drop    \ b (a+b)
-            swap        \ (a+b) b
-            over        \ (a+b) b (a+b)
-            drop        \ (a+b) b
-            swap        \ b (a+b)
-        over max-fib = until
-        drop
+            swap over + \ a b → b (a+b)
+            r> 1 -      \ decrement count
+            dup >r      \ save updated count back to R
+            0=          \ done when count reaches 0
+        until
+        r> drop         \ discard count
+        nip             \ discard a, return b
     then
 ;
 
-\ Print all fibonacci numbers up to max-fib
-: print-fibs
+: print-fibs ( -- )
     1
     begin
-        dup fib .
-        cr
-        1+
+        dup . ." : " dup fib . cr
+        1 +
         dup max-fib >
     until
     drop
