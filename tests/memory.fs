@@ -139,7 +139,7 @@ create greeting header  0 , 0 c, 5 c, 0 , Z" hello"
     ." header_fixed_sizeof (expect 6) = " header_fixed_sizeof . cr
     ." origin x (expect 0)  = " origin point_x + @ . cr
     ." origin y (expect 0)  = " origin point_y + @ . cr
-    ." red-color red (expect 255) = " red_color rgb_red + c@ . cr
+    ." red-color red (expect 255) = " red-color rgb_red + c@ . cr
     ." greeting namelen (expect 5) = " greeting header_namelen + c@ . cr
     ." greeting name (expect hello) = " greeting header_name + cputs cr
 ;
