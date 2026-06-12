@@ -350,6 +350,13 @@ forthc/
 │   ├── ast_nodes.py        AST node dataclasses
 │   ├── parser.py           recursive-descent parser
 │   └── codegen.py          VM assembly code generator
+├── examples/
+│   ├── Makefile
+│   ├── basic.fs            Simple counter and output example
+│   ├── fibonacci.fs        Classic Fibonacci number generator
+│   ├── hanoi.fs            Recursive tower of Hanoi
+│   ├── mandelbrot.fs       Text Mandelbrot set generator
+│   └── pi.fs               Calculate Pi using the Nilakantha infinite series.
 ├── targets/
 │   └── 65816/
 │       ├── vmachine.inc    65816 macro definitions + import declarations
