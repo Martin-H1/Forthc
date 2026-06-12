@@ -3,7 +3,7 @@
 \ Setup constants to remove magic numbers to allow
 \ for greater zoom with different scale factors.
 20    constant MAXITER
-$FFD9 constant MINVAL
+-39   constant MINVAL
 40    constant MAXVAL
 $0280 constant RESCALE
 $0A00 constant S_ESCAPE

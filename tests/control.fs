@@ -12,6 +12,7 @@
     begin-until-test
     begin-while-test
     plusloop-test
+    recurse-test
     ." Control structures test exit" cr
 ;
 
@@ -62,4 +63,19 @@
     \ Non-zero start index
     ." 5 to 9 by 2 (expect 5 7 9) = "
     11 5 do i . 2 +loop cr
+;
+
+: factorial ( n -- n! )
+    dup 1 > if
+        dup 1 - recurse *
+    else
+        drop 1
+    then
+;
+
+: recurse-test
+    cr ." recurse test" cr
+    ." 1 factorial (expect 1)   = " 1 factorial . cr
+    ." 5 factorial (expect 120) = " 5 factorial . cr
+    ." 7 factorial (expect 5040) = " 7 factorial . cr
 ;

@@ -243,6 +243,7 @@ class CodeGenerator:
     _label_count: int    = field(default=0, init=False)
     _constants:   dict   = field(default_factory=dict, init=False)
     _creates:     set    = field(default_factory=set, init=False)
+    _current_word: str   = field(default='', init=False)
     _structs:     dict   = field(default_factory=dict, init=False)
     _variables:   set    = field(default_factory=set, init=False)
     _words:       set    = field(default_factory=set, init=False)
@@ -440,6 +441,7 @@ class CodeGenerator:
         self._variables.add(node.name)
 
     def _gen_word(self, node: WordDef):
+        self._current_word = node.name
         self._words.add(node.name)
         sym = _mangle(node.name)
         self._emit(f'; word definition: {node.name}')
@@ -536,13 +538,21 @@ class CodeGenerator:
         # Known constant — compile-time fold to LIT
         if name in self._constants:
             val = self._constants[name]
-            self._emit_instr(f'LIT {val}', f'constant {name} = {val}')
+            self._emit_instr(f'LIT ${_to_u16(val):04X}', f'constant {name} = {val}')
             return
 
         # Variable or create — push its address
         if name in self._variables or name in self._creates:
             sym = _mangle(name)
             self._emit_instr(f'LIT {sym}', f'address of {name}')
+            return
+
+        # recurse — call the current word
+        if name == 'recurse':
+            if not self._current_word:
+                raise CodeGenError("'recurse' used outside a word definition", node)
+            sym = _mangle(self._current_word)
+            self._emit_instr(f'CALL {sym}', 'recurse')
             return
 
         # Known user-defined — word mangle the name
