@@ -17,7 +17,10 @@ variable iters
 
 \ Compute squares, but rescale to remove extra scaling factor.
 : zr_sq z-real @ dup RESCALE */ ;
+.inline zr_sq
+
 : zi_sq z-imag @ dup RESCALE */ ;
+.inline zi_sq
 
 \ Translate escape iters to ascii greyscale.
 : .CHAR
@@ -26,13 +29,12 @@ variable iters
   type ;
 
 \ Numbers above 4 will always escape, so compare to a scaled value.
-: escapes?
-  S_ESCAPE > ;
+: escapes? S_ESCAPE > ;
+.inline escapes?
 
 \ Increment count and compare to max iterations.
-: count_and_test? ( -- f )
-  iters @ 1+ dup iters !
-  MAXITER > ;
+: count_and_test? iters @ 1+ dup iters ! MAXITER > ;
+.inline count_and_test?
 
 \ stores the row column values from the stack for the escape calculation.
 : init_vars ( i-val r-val -- )
