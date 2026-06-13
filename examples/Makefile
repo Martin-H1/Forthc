@@ -2,6 +2,10 @@ include ../common.mk
 
 CA65FLAGS = -I ../targets/65816
 
+FORTHC_FLAGS = --const CELL_SIZE=2 --const CELL_BITS=16
+
+FORTHC_PATH = ..\__main__.py
+
 all: debug
 
 debug: obj obj/debug bin bin/debug \
@@ -15,7 +19,7 @@ obj/debug/vmachine.o: ../targets/65816/vmachine.s
 	$(CA65) --cpu 65816 $(CA65FLAGS) $< -l $*.lst -o $@
 
 ../targets/65816/core.s: ../targets/65816/core.fs
-	$(PYTHON) "..\__main__.py" $<
+	$(FORTHC) $<
 
 obj/debug/core.o: ../targets/65816/core.s
 	$(CA65) --cpu 65816 $(CA65FLAGS) $< -l obj/debug/pictured.lst -o $@
@@ -36,7 +40,7 @@ bin/debug/pi.bin: obj/debug/vmachine.o obj/debug/core.o obj/debug/pi.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/pi.bin -m bin/debug/pi.map $^
 
 %.s : %.fs
-	$(PYTHON) "..\__main__.py" $<
+	$(FORTHC) $<
 
 %.srec : %.bin
 	$(SREC_CAT) -address-length=3 -execution_start_address 0x004000 $< -binary -offset 0x4000 -O -Motorola -DISable Header > $@
