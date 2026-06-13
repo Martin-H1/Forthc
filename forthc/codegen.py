@@ -71,9 +71,13 @@ def _generate_inc(stem: str, exports: list) -> str:
     return '\n'.join(lines)
 
 
-def generate(program: Program, stem: str = '', out: TextIO | None = None) -> CompileResult:
+def generate(program: Program, stem: str = '',
+             predefined: dict = None,
+             out: TextIO | None = None) -> CompileResult:
     buf = io.StringIO()
     cg  = CodeGenerator(out=buf, stem=stem)
+    if predefined:
+        cg._constants.update(predefined)
     text = cg.generate(program)
     if out is not None:
         out.write(text)

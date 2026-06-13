@@ -38,14 +38,19 @@ class ParseError(Exception):
     def __init__(self, msg, token: Token):
         super().__init__(f"Line {token.line}, col {token.col}: {msg} (got {token.type.name} {token.value!r})")
         self.token = token
-
+        self._known_constants: dict = {}
 
 class Parser:
-    def __init__(self, tokens: list[Token]):
-        self._tokens = tokens
-        self._pos    = 0
-        self._struct_names: set = set()
-        self._defining_words: set = set()
+    def __init__(self, tokens: list[Token], predefined: dict = None):
+        self._tokens           = tokens
+        self._pos              = 0
+        self._struct_names:    set  = set()
+        self._defining_words:  set  = set()
+        self._known_constants: dict = dict(predefined or {})
+        # add built-in nullary constants using CELL_SIZE if provided
+        cell_size = self._known_constants.get('CELL_SIZE', 2)
+        self._known_constants.setdefault('cell', cell_size)
+        self._known_constants.setdefault('cell-size', cell_size)
 
     # ------------------------------------------------------------------
     # Helpers
@@ -115,6 +120,79 @@ class Parser:
             args=args,
             line=tok.line, col=tok.col)
 
+    def _fold_constant_expr(self) -> int | None:
+        """Evaluate a compile-time constant expression.
+        Returns the integer result if the entire expression folds cleanly,
+        or None if any operand is not a known constant.
+        Consumes tokens up to but not including 'constant'.
+        """
+        CELL_SIZE = self._known_constants.get('CELL_SIZE', 2)
+        stack = []
+
+        FOLDABLE_OPS = {
+            '+':      lambda a, b: a + b,
+            '-':      lambda a, b: a - b,
+            '*':      lambda a, b: a * b,
+            '/':      lambda a, b: a // b,
+            'lshift': lambda a, b: a << b,
+            'rshift': lambda a, b: (a & 0xFFFF) >> b,
+            'and':    lambda a, b: a & b,
+            'or':     lambda a, b: a | b,
+            'xor':    lambda a, b: a ^ b,
+            '=':      lambda a, b: 0xFFFF if a == b else 0,
+            '<':      lambda a, b: 0xFFFF if a < b else 0,
+            '>':      lambda a, b: 0xFFFF if a > b else 0,
+            '<>':     lambda a, b: 0xFFFF if a != b else 0,
+        }
+        UNARY_OPS = {
+            'negate': lambda a: -a,
+            'invert': lambda a: ~a & 0xFFFF,
+            '1+':     lambda a: a + 1,
+            '1-':     lambda a: a - 1,
+            '2*':     lambda a: a * 2,
+            '2/':     lambda a: a // 2,
+            'cells':  lambda a: a * CELL_SIZE,
+        }
+
+        saved_pos = self._pos
+        while not self._match(TType.CONSTANT, TType.EOF):
+            tok = self._peek()
+            if tok.type == TType.NUMBER:
+                self._advance()
+                stack.append(tok.value)
+            elif tok.type == TType.WORD:
+                name = tok.value
+                if name in self._known_constants:
+                    self._advance()
+                    stack.append(self._known_constants[name])
+                elif name in UNARY_OPS:
+                    if len(stack) < 1:
+                        self._pos = saved_pos
+                        return None
+                    self._advance()
+                    stack.append(UNARY_OPS[name](stack.pop()))
+                elif name in FOLDABLE_OPS:
+                    if len(stack) < 2:
+                        self._pos = saved_pos
+                        return None
+                    self._advance()
+                    b = stack.pop()
+                    a = stack.pop()
+                    stack.append(FOLDABLE_OPS[name](a, b))
+                else:
+                    # unknown word — can't fold
+                    self._pos = saved_pos
+                    return None
+            else:
+                # unexpected token — can't fold
+                self._pos = saved_pos
+                return None
+
+        if len(stack) == 1:
+            return stack[0]
+        self._pos = saved_pos
+        return None
+
     # ------------------------------------------------------------------
     # Top level
     # ------------------------------------------------------------------
@@ -139,8 +217,21 @@ class Parser:
         if (tok.type == TType.WORD and tok.value in self._defining_words):
             return self._defining_call(tok)
 
+        # constant expression starting with a known constant name
+        if (tok.type == TType.WORD and tok.value in self._known_constants):
+            val = self._fold_constant_expr()
+            if val is not None and self._match(TType.CONSTANT):
+                self._advance()
+                name_tok = self._expect(TType.WORD)
+                self._known_constants[name_tok.value] = val
+                return ConstantDef(name=name_tok.value, value=val,
+                                   line=tok.line, col=tok.col)
+            raise ParseError(
+                "Constant expression must be followed by 'constant'",
+                self._peek())
+
         if tok.type == TType.NUMBER:
-            # collect leading numbers - could be args to a defining word call
+            # first try: collect leading numbers for defining word call
             saved_pos = self._pos
             args = []
             while self._match(TType.NUMBER):
@@ -151,12 +242,23 @@ class Parser:
             if (self._match(TType.WORD) and
                     self._peek().value in self._defining_words):
                 return self._defining_call(tok, args)
-            # not a defining call - restore position and handle normally
+            # not a defining call
+            # restore and try constant folding
+            self._pos = saved_pos
+            val = self._fold_constant_expr()
+            if val is not None and self._match(TType.CONSTANT):
+                self._advance()
+                name_tok = self._expect(TType.WORD)
+                self._known_constants[name_tok.value] = val
+                return ConstantDef(name=name_tok.value, value=val,
+                                   line=tok.line, col=tok.col)
+            # restore and try simple number constant
             self._pos = saved_pos
             num_tok = self._advance()
             if self._match(TType.CONSTANT):
                 self._advance()
                 name_tok = self._expect(TType.WORD)
+                self._known_constants[name_tok.value] = num_tok.value
                 return ConstantDef(name=name_tok.value, value=num_tok.value,
                                    line=num_tok.line, col=num_tok.col)
             else:
@@ -428,6 +530,5 @@ class Parser:
         return DoLoop(body=body, plus_loop=plus,
                       line=do_tok.line, col=do_tok.col)
 
-
-def parse(tokens: list[Token]) -> Program:
-    return Parser(tokens).parse()
+def parse(tokens: list[Token], predefined: dict = None) -> Program:
+    return Parser(tokens, predefined=predefined).parse()

@@ -29,12 +29,24 @@ def main():
                     help='Print token stream and exit')
     ap.add_argument('--dump-ast', action='store_true',
                     help='Print AST and exit')
+    ap.add_argument('--const', action='append', metavar='NAME=VALUE',
+                    help='Define a compile-time constant (may be repeated)')
     args = ap.parse_args()
 
     src_path = pathlib.Path(args.source)
     if not src_path.exists():
         print(f"forthc: error: file not found: {src_path}", file=sys.stderr)
         sys.exit(1)
+
+    predefined = {}
+    for c in (args.const or []):
+        try:
+            name, val = c.split('=', 1)
+            predefined[name.strip()] = int(val.strip(), 0)
+        except ValueError:
+            print(f"forthc: bad --const format: {c!r} (expected NAME=VALUE)",
+                  file=sys.stderr)
+            sys.exit(1)
 
     source = src_path.read_text(encoding='utf-8')
 
@@ -52,7 +64,7 @@ def main():
 
     # --- Parse ---
     try:
-        program = parse(tokens)
+        program = parse(tokens, predefined=predefined)
     except ParseError as e:
         print(f"forthc: parse error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -67,7 +79,7 @@ def main():
 
     # --- Code generation ---
     try:
-        result = generate(program, stem=stem)
+        result = generate(program, stem=stem, predefined=predefined)
     except CodeGenError as e:
         print(f"forthc: codegen error: {e}", file=sys.stderr)
         sys.exit(1)
