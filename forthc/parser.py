@@ -30,7 +30,7 @@ from .ast_nodes import (
     ConstantDef, VariableDef, WordDef, DefiningWord, DefiningCall,
     DefineDirective, ExportDirective, OriginDirective, SegmentDirective,
     MainDirective, Comma, CComma, NumberLit, StringLit, PrintString,
-    WordCall, IfThen, BeginUntil, BeginWhileRepeat, DoLoop,
+    WordCall, IfThen, BeginUntil, BeginWhileRepeat, DoLoop, InlineDirective,
 )
 
 
@@ -337,6 +337,12 @@ class Parser:
             self._advance()
             word_tok = self._expect(TType.WORD)
             return ExportDirective(word=word_tok.value,
+                                   line=tok.line, col=tok.col)
+
+        if tok.type == TType.INLINE:
+            self._advance()
+            word_tok = self._expect(TType.WORD)
+            return InlineDirective(word=word_tok.value,
                                    line=tok.line, col=tok.col)
 
         if tok.type == TType.ORIGIN:

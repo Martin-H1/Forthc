@@ -38,14 +38,14 @@ class TType(Enum):
     DOTQUOTE    = auto()   # ."  (print string literal)
     SQUOTE      = auto()   # S"  (string literal onto stack)
     DEFINE      = auto()   # .define
-
+    ENDSTRUCT   = auto()   # .end-struct
     EXPORT      = auto()   # .export  (extension: set word public for linker)
+    FIELD       = auto()   # .field
+    INLINE      = auto()   # .inline
+    MAIN        = auto()   # .main    (extension: designate entry-point word)
     ORIGIN      = auto()   # .origin  (extension: set origin address)
     SEGMENT     = auto()   # .segment (extension: set segment name)
-    MAIN        = auto()   # .main    (extension: designate entry-point word)
     STRUCT      = auto()   # .struct
-    FIELD       = auto()   # .field
-    ENDSTRUCT   = auto()   # .end-struct
     ZQUOTE      = auto()   # Z"  (null-terminated string literal)
     EOF         = auto()
 
@@ -71,11 +71,12 @@ KEYWORD_MAP = {
     '+loop':    TType.PLUSLOOP,
     '.define':  TType.DEFINE,
     '.export':  TType.EXPORT,
+    '.field':   TType.FIELD,
+    '.inline':  TType.INLINE,
+    '.main':    TType.MAIN,
     '.origin':  TType.ORIGIN,
     '.segment': TType.SEGMENT,
-    '.main':    TType.MAIN,
-    '.struct':      TType.STRUCT,
-    '.field':       TType.FIELD,
+    '.struct':  TType.STRUCT,
     '.end-struct':  TType.ENDSTRUCT,
 }
 

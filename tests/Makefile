@@ -13,6 +13,7 @@ debug: obj obj/debug bin bin/debug \
 	bin/debug/const-expr.bin bin/debug/const-expr.srec \
 	bin/debug/core-test.bin bin/debug/core-test.srec \
 	bin/debug/double.bin bin/debug/double.srec \
+	bin/debug/inline-test.bin bin/debug/inline-test.srec \
 	bin/debug/logic.bin bin/debug/logic.srec \
 	bin/debug/math.bin bin/debug/math.srec \
 	bin/debug/memory.bin bin/debug/memory.srec \
@@ -47,6 +48,9 @@ bin/debug/core-test.bin: obj/debug/vmachine.o obj/debug/core.o obj/debug/picture
 
 bin/debug/double.bin: obj/debug/vmachine.o obj/debug/core.o obj/debug/double.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/double.bin -m bin/debug/double.map $^
+
+bin/debug/inline-test.bin: obj/debug/vmachine.o obj/debug/inline-test.o
+	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/inline-test.bin -m bin/debug/inline-test.map $^
 
 bin/debug/logic.bin: obj/debug/vmachine.o obj/debug/logic.o
 	$(LD65) -C ../targets/65816/debug.cfg -o bin/debug/logic.bin -m bin/debug/logic.map $^

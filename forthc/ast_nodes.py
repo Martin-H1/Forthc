@@ -101,6 +101,11 @@ class ExportDirective(ASTNode):
     word: str = ''
 
 @dataclass
+class InlineDirective(ASTNode):
+    """.inline name  — mark word for inline expansion at call sites"""
+    word: str = ''
+
+@dataclass
 class OriginDirective(ASTNode):
     """.origin $8000  →  set the origin address"""
     address: int = 0
