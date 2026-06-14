@@ -96,6 +96,22 @@ def generate(program: Program, stem: str = '',
 # Name mangling
 # ---------------------------------------------------------------------------
 
+def _log2_if_power_of_two(operand: str) -> int | None:
+    """If operand is a hex/decimal literal representing a power of two,
+    return log2(n). Returns None otherwise."""
+    try:
+        if operand.startswith('$'):
+            n = int(operand[1:], 16)
+        elif operand.startswith('0x') or operand.startswith('0X'):
+            n = int(operand[2:], 16)
+        else:
+            n = int(operand)
+        if n > 0 and (n & (n - 1)) == 0:
+            return n.bit_length() - 1
+    except ValueError:
+        pass
+    return None
+
 def _to_u16(value: int) -> int:
     """Convert a signed integer to its 16-bit two's complement unsigned form.
     CA65 does not accept negative constants, so -1 must be emitted as $FFFF."""
@@ -412,6 +428,23 @@ class CodeGenerator:
                             i += 2
                             changed = True
                             continue
+
+                        # LIT 2^k / CALL _mul_sl  →  LIT k / CALL vm_mulsl_power2
+                        if (a.mnemonic == 'LIT' and b.mnemonic == 'CALL' and
+                            b.operand == '_mul_sl'):
+                            shift = _log2_if_power_of_two(a.operand)
+                            if shift is not None:
+                                result.append(Instruction(
+                                    kind='instr', mnemonic='LIT',
+                                    operand=f'${shift:04X}',
+                                    comment=f'shift count for */ 2^{shift}'))
+                                result.append(Instruction(
+                                    kind='instr', mnemonic='CALL',
+                                    operand='vm_mulsl_power2',
+                                    comment=f'peephole: */ {1<<shift} → power2 shift'))
+                                i += 2
+                                changed = True
+                                continue
 
                 result.append(self._instructions[i])
                 i += 1

@@ -69,6 +69,7 @@ RNOS            = 3
         .import vm_umslashmod
         .import vm_smrem
         .import vm_fmmod
+        .import vm_mulsl_power2
         .import vm_and
         .import vm_or
         .import vm_xor

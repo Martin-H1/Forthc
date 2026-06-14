@@ -67,8 +67,21 @@
      -3 20 MOD   ." -3 20 MOD (expect 17) = " . cr
 ;
 
+: mulsl-power2-test
+    cr ." */ power-of-two test" cr
+    ." 100 3 4 */ (expect 75)   = " 100 3 4 */ . cr
+    ." 100 3 8 */ (expect 37)   = " 100 3 8 */ . cr
+    ." -100 3 4 */ (expect -75) = " -100 3 4 */ . cr
+    ." 100 -3 4 */ (expect -75) = " 100 -3 4 */ . cr
+    ." -100 -3 4 */ (expect 75) = " -100 -3 4 */ . cr
+    ." 256 1 256 */ (expect 1)   = " 256 1 256 */ . cr
+    ." 512 1 256 */ (expect 2)   = " 512 1 256 */ . cr
+    ." 100 1 4 */  (expect 25)  = " 100 1 4 */ . cr
+    ." 100 1 8 */  (expect 12)   = " 100 1 8 */ . cr
+;
+
 : main
-    cr
+    cr ." Math test enter"
     base-test
     urinary-test
     plus-test
@@ -79,4 +92,6 @@
     slashmod-test
     slash-test
     mod-test
+    mulsl-power2-test
+    ." Math test exit" cr
 ;

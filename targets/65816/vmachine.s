@@ -409,6 +409,62 @@ PUBLIC  vm_fmmod
         RTS
 ENDPUBLIC
 
+;------------------------------------------------------------------------------
+; vm_mulsl_power2 ( n1 n2 shift -- n1*n2>>shift )
+; Specialized */ for power-of-two divisors.
+;------------------------------------------------------------------------------
+PUBLIC vm_mulsl_power2
+        ; stack: ( n1 n2 shift )
+        ; determine sign of result from n1 XOR n2
+        LDA  NOS,X              ; n2
+        EOR  PSP2,X             ; n1 XOR n2 — sign bit = sign of result
+        PHA                     ; save sign on hardware stack
+        LDA  TOS,X              ; shift count
+        DROP                    ; remove shift from parameter stack
+        PHA                     ; save shift count on hardware stack
+        ; stack now: ( n1 n2 )
+        ; abs(n1)
+        LDA  NOS,X
+        BPL  @n1pos
+        EOR  #$FFFF
+        INC  A
+@n1pos: STA  NOS,X
+        ; abs(n2)
+        LDA  TOS,X
+        BPL  @n2pos
+        EOR  #$FFFF
+        INC  A
+@n2pos: STA  TOS,X
+        ; unsigned multiply — leaves ( ud_lo ud_hi ) on stack
+        JSR  vm_umstar
+        ; retrieve shift count
+        PLA
+        TAY
+        BEQ  @no_shift
+@shift: LDA  TOS,X
+        CMP  #$8000
+        ROR  TOS,X
+        ROR  NOS,X
+        DEY
+        BNE  @shift
+@no_shift:
+        ; retrieve sign
+        PLA
+        BPL  @positive
+        ; negate 32-bit result
+        LDA  NOS,X
+        EOR  #$FFFF
+        INC  A
+        STA  NOS,X
+        LDA  TOS,X
+        EOR  #$FFFF
+        ADC  #0
+        STA  TOS,X
+@positive:
+        DROP                    ; discard ud_hi, ud_lo becomes TOS
+        RTS
+ENDPUBLIC
+
 ;----------------------------------------------------------------------------
 ; Bitwise operations
 ;----------------------------------------------------------------------------
