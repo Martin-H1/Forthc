@@ -34,7 +34,7 @@ variable n
 
 \ calculates a single scaled quotient term 
 : quotient ( -- q )
-  four denominator / ;
+    four denominator u/ ;
 
 \ calculates Qn - Qn+1
 : calc_term ( -- q )
@@ -42,16 +42,19 @@ variable n
 
 \ Computes pi as a ratio of integers
 : calc_pi ( -- numerator denominator )
-  2 n !
-  three
-  begin
-    calc_term dup 0> while +
-  repeat
-  drop
-  rescale ;
+    2 n !
+    three
+    begin
+        calc_term dup 0>
+        n @ 38 u< and
+    while
+        +
+    repeat
+    drop
+    rescale ;
 
 : print_pi
   calc_pi swap
   cr
   ." Pi = " . ." / " . cr
-  ." N = " n . cr ;
+  ." N = " n @ . cr ;

@@ -30,6 +30,7 @@
 .export dmin
 .export /mod
 .export /
+.export u/
 .export */mod
 .export */
 .export mod
@@ -204,6 +205,10 @@ $FFFF constant uint_max
 : /
     /mod                            ( rem quot )
     nip                             ( quot )
+;
+
+: u/ ( u1 u2 -- u3 )
+    0 swap um/mod nip
 ;
 
 \------------------------------------------------------------------------------
