@@ -1,30 +1,15 @@
-.export max
-.export min
-.export umax
-.export umin
-.export within
+.export negate
+.export 2+
+.export 2-
+.export s>d
 .export d0=
 .export d0<
-.export dmax
-.export dmin
+.export m+
 .export min-int
 .export max-int
 .export min-2int
 .export max-2int
-.export negate
-.export 2+
-.export 2-
-.export /mod
-.export /
-.export */mod
-.export */
-.export mod
-.export s>d
-.export m+
-.export m*
-.export m*/
 .export d2*
-.export d2/
 .export d>s
 .export not
 .export true
@@ -36,7 +21,23 @@
 .export cell+
 .export erase
 .export 2drop
+.export max
+.export min
+.export umax
+.export umin
+.export within
+.export dmax
+.export dmin
+.export /mod
+.export /
+.export */mod
+.export */
+.export mod
+.export m*
+.export m*/
+.export d2/
 .export 2rot
+
 
 $FFFF constant forth_true
 0     constant forth_false
@@ -45,6 +46,92 @@ $8000 constant int_min
 $7FFF constant int_max
 $FFFF constant minus_one
 $FFFF constant uint_max
+
+\ Inline words first for maximum opportunity.
+
+: negate ( n -- -n )
+    invert 1+
+;
+.inline negate
+
+: 2+ ( n -- n+2 )
+    1+ 1+
+;
+.inline 2+
+
+: 2- ( n -- n-2 )
+    1- 1-
+;
+.inline 2-
+
+\ S>D - ( n -- n [0 | -1]) sign extend a word to a long.
+: s>d
+    dup 0<
+;
+.inline s>d
+
+\------------------------------------------------------------------------------
+\ D0= ( ud_lo ud_hi -- flag ) true if double is zero
+\ https://forth-standard.org/standard/double/DZeroEqual
+\------------------------------------------------------------------------------
+: d0=
+    or
+    0=
+;
+.inline d0=
+
+\------------------------------------------------------------------------------
+\ D0< ( ud_lo ud_hi -- flag ) true if double is negative
+\ https://forth-standard.org/standard/double/DZeroless
+\------------------------------------------------------------------------------
+: d0<
+    nip
+    0<
+;
+.inline d0<
+
+\------------------------------------------------------------------------------
+\ M+ ( d n -- d ) add single to double, sign extending n first
+\------------------------------------------------------------------------------
+: m+
+    s>d               \ sign extend n to double
+    d+                \ add to d
+;
+.inline m+
+
+\------------------------------------------------------------------------------
+\ MIN-INT ( -- n ) pushes lowest single precision integer
+\------------------------------------------------------------------------------
+: min-int
+    INT_MIN
+;
+.inline min-int
+
+\------------------------------------------------------------------------------
+\ MAX-INT ( -- n ) pushes highest single precision integer
+\------------------------------------------------------------------------------
+: max-int
+    INT_MAX
+;
+.inline max-int
+
+\------------------------------------------------------------------------------
+\ MIN-2INT ( -- d ) pushes lowest single precision integer
+\------------------------------------------------------------------------------
+: min-2int
+    0 min-int      \ Sign bit only
+;
+.inline min-2int
+
+\------------------------------------------------------------------------------
+\ MAX-2INT ( -- d ) pushes highest single precision integer
+\------------------------------------------------------------------------------
+: max-2int
+    UINT_MAX       \ UINT_MAX has all bits set.
+    INT_MAX        \ Sign bit clear, all other bits set.
+;
+.inline max-2int
+
 
 \ Comparison
 
@@ -74,24 +161,6 @@ $FFFF constant uint_max
 ;
 
 \------------------------------------------------------------------------------
-\ D0= ( ud_lo ud_hi -- flag ) true if double is zero
-\ https://forth-standard.org/standard/double/DZeroEqual
-\------------------------------------------------------------------------------
-: d0=
-    or
-    0=
-;
-
-\------------------------------------------------------------------------------
-\ D0< ( ud_lo ud_hi -- flag ) true if double is negative
-\ https://forth-standard.org/standard/double/DZeroless
-\------------------------------------------------------------------------------
-: d0<
-    nip
-    0<
-;
-
-\------------------------------------------------------------------------------
 \ DMAX ( d1 d2 -- d ) larger of two doubles
 \ https://forth-standard.org/standard/double/DMAX
 \------------------------------------------------------------------------------
@@ -118,47 +187,6 @@ $FFFF constant uint_max
 ;
 
 \ Arithmetic
-
-\------------------------------------------------------------------------------
-\ MIN-INT ( -- n ) pushes lowest single precision integer
-\------------------------------------------------------------------------------
-: min-int
-    INT_MIN
-;
-
-\------------------------------------------------------------------------------
-\ MAX-INT ( -- n ) pushes highest single precision integer
-\------------------------------------------------------------------------------
-: max-int
-    INT_MAX
-;
-
-\------------------------------------------------------------------------------
-\ MIN-2INT ( -- d ) pushes lowest single precision integer
-\------------------------------------------------------------------------------
-: min-2int
-    0 min-int      \ Sign bit only
-;
-
-\------------------------------------------------------------------------------
-\ MAX-2INT ( -- d ) pushes highest single precision integer
-\------------------------------------------------------------------------------
-: max-2int
-    UINT_MAX       \ UINT_MAX has all bits set.
-    INT_MAX        \ Sign bit clear, all other bits set.
-;
-
-: negate ( n -- -n )
-    invert 1+
-;
-
-: 2+ ( n -- n+2 )
-    1+ 1+
-;
-
-: 2- ( n -- n-2 )
-    1- 1-
-;
 
 \------------------------------------------------------------------------------
 \ /MOD - ( n1 n2 -- rem quot )   signed floored division
@@ -215,19 +243,6 @@ $FFFF constant uint_max
     drop                            ( remainder )
 ;
 
-\ S>D - ( n -- n [0 | -1]) sign extend a word to a long.
-: s>d
-    dup 0<
-;
-
-\------------------------------------------------------------------------------
-\ M+ ( d n -- d ) add single to double, sign extending n first
-\------------------------------------------------------------------------------
-: m+
-    s>d               \ sign extend n to double
-    d+                \ add to d
-;
-
 \------------------------------------------------------------------------------
 \ M* ( n1 n2 -- d ) d is the signed product of n1 times n2.
 \ https://forth-standard.org/standard/core/MTimes
@@ -278,6 +293,7 @@ $FFFF constant uint_max
     2dup
     d+
 ;
+.inline d2*
 
 \------------------------------------------------------------------------------
 \ D2/ ( d -- d/2 ) double arithmetic right shift.
@@ -302,27 +318,31 @@ $FFFF constant uint_max
 : d>s
     drop
 ;
-
+.inline d>s
 
 \ Logic
 
 : not ( f -- f )
     0=
 ;
+.inline not
 
 : true  ( -- -1 )
     FORTH_TRUE
 ;
+.inline true
 
 : false ( -- 0  )
     FORTH_FALSE
 ;
+.inline false
 
 \ Memory functions
 
 : +! ( n addr -- )
     dup @ rot + swap !
 ;
+.inline +!
 
 \------------------------------------------------------------------------------
 \ ALIGNED ( addr -- a-addr ) a-addr is the first aligned address greater than
@@ -334,18 +354,22 @@ $FFFF constant uint_max
     uint_max 1-
     and
 ;
+.inline aligned
 
 : cell ( -- n )
     CELL_SIZE
 ;
+.inline cell
 
 : cells ( n -- n*cell_size)
     CELL_SIZE *
 ;
+.inline cells
 
 : cell+ ( n -- n+CELL_SIZE )
     CELL_SIZE +
 ;
+.inline cell+
 
 \------------------------------------------------------------------------------
 \ ERASE ( addr u -- ) fill u bytes starting at addr with zero
@@ -353,12 +377,14 @@ $FFFF constant uint_max
 : erase
     0 fill
 ;
+.inline erase
 
 \ Stack functions
 : 2drop
     drop
     drop
 ;
+.inline 2drop
 
 \------------------------------------------------------------------------------
 \ 2ROT -
