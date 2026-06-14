@@ -122,9 +122,14 @@ PUBLIC  vm_star
         STA  vm_tmp1                ; save n2
         LDA  TOS,X                  ; multiplier n1
         LDY  #0                     ; accumulator
+.ifndef UNROLL
         STX  vm_sp_shadow
         LDX  #16                    ; 16 bits (loop counter, not stack ptr)
 @loop:
+.else
+.macro SHIFTADD16
+.scope
+.endif
         LSR  A                      ; shift multiplier right
         BCC  @skip
         PHA
@@ -135,9 +140,31 @@ PUBLIC  vm_star
         PLA
 @skip:
         ASL  vm_tmp1                ; shift multiplicand left
+.ifndef UNROLL
         DEX
         BNE  @loop
         LDX  vm_sp_shadow           ; restore parameter stack pointer
+.else
+.endscope
+.endmacro
+        ; Unroll the loop for performance.
+        SHIFTADD16
+        SHIFTADD16
+        SHIFTADD16
+        SHIFTADD16
+        SHIFTADD16
+        SHIFTADD16
+        SHIFTADD16
+        SHIFTADD16
+        SHIFTADD16
+        SHIFTADD16
+        SHIFTADD16
+        SHIFTADD16
+        SHIFTADD16
+        SHIFTADD16
+        SHIFTADD16
+        SHIFTADD16
+.endif
         STY  TOS,X                  ; store result at TOS
         RTS
 ENDPUBLIC

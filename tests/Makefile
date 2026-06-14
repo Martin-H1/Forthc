@@ -1,6 +1,6 @@
 include ../common.mk
 
-CA65FLAGS = -I ../targets/65816
+CA65FLAGS = -D UNROLL -I ../targets/65816
 
 FORTHC_FLAGS = --const CELL_SIZE=2 --const CELL_BITS=16
 

@@ -55,6 +55,14 @@ class CompileResult:
     exports: list       # original Forth names of exported words
     inc:     str        # companion .inc content, empty if no exports
 
+@dataclass
+class Instruction:
+    """A single buffered instruction or directive."""
+    kind:     str = 'instr'   # 'instr', 'label', 'raw', 'blank', 'comment'
+    mnemonic: str = ''
+    operand:  str = ''
+    comment:  str = ''
+    text:     str = ''        # for 'raw', 'label', 'comment', 'blank' kinds
 
 def _generate_inc(stem: str, exports: list) -> str:
     """Generate companion .inc file content for exported symbols."""
@@ -264,6 +272,7 @@ class CodeGenerator:
     _does_words:     set  = field(default_factory=set,  init=False)
     _inline_words:   dict = field(default_factory=dict, init=False)
     _word_nodes:     dict = field(default_factory=dict, init=False)
+    _instructions: list = field(default_factory=list, init=False)
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -283,29 +292,137 @@ class CodeGenerator:
         for node in program.definitions:
             self._top_def(node)
         self._emit_file_footer()
-        if isinstance(self.out, io.StringIO):
-            return self.out.getvalue()
-        return ''
+        self._peephole()
+        return self._render()
 
     # ------------------------------------------------------------------
     # Emit helpers
     # ------------------------------------------------------------------
 
     def _emit(self, line: str = ''):
-        print(line, file=self.out)
-
-    def _emit_instr(self, instr: str, comment: str = ''):
-        if comment:
-            self._emit(f'    {instr:<20} ; {comment}')
+        stripped = line.strip()
+        if not stripped:
+            self._instructions.append(Instruction(kind='blank'))
+        elif stripped.startswith(';'):
+            self._instructions.append(Instruction(kind='comment', text=line))
         else:
-            self._emit(f'    {instr}')
+            self._instructions.append(Instruction(kind='raw', text=line))
+
+    def _emit_instr(self, mnemonic: str, operand: str = '', comment: str = ''):
+        self._instructions.append(Instruction(
+            kind='instr', mnemonic=mnemonic,
+            operand=operand, comment=comment))
 
     def _emit_label(self, label: str):
-        self._emit(f'{label}:')
+        self._instructions.append(Instruction(kind='label', text=label))
 
     def _fresh_label(self, prefix='L') -> str:
         self._label_count += 1
         return f'{prefix}_{self._label_count:04d}'
+
+    def _peephole(self) -> None:
+        """Apply peephole optimizations to self._instructions in place."""
+        changed = True
+        while changed:
+            changed = False
+            result = []
+            i = 0
+            while i < len(self._instructions):
+                if i + 1 < len(self._instructions):
+                    a = self._instructions[i]
+                    b = self._instructions[i + 1]
+                    if a.kind == 'instr' and b.kind == 'instr':
+
+                        # LIT $0001 / CALL vm_lshift  →  TWOSTAR
+                        if (a.mnemonic == 'LIT' and a.operand == '$0001' and
+                                b.mnemonic == 'CALL' and b.operand == 'vm_lshift'):
+                            result.append(Instruction(
+                                kind='instr', mnemonic='TWOSTAR',
+                                comment='peephole: 1 lshift → 2*'))
+                            i += 2
+                            changed = True
+                            continue
+
+                        # LIT $0000 / CALL vm_eq  →  CALL vm_zeq
+                        if (a.mnemonic == 'LIT' and a.operand == '$0000' and
+                                b.mnemonic == 'CALL' and b.operand == 'vm_eq'):
+                            result.append(Instruction(
+                                kind='instr', mnemonic='CALL',
+                                operand='vm_zeq',
+                                comment='peephole: 0 = → 0='))
+                            i += 2
+                            changed = True
+                            continue
+
+                        # LIT $0000 / CALL vm_lt  →  CALL vm_zlt
+                        if (a.mnemonic == 'LIT' and a.operand == '$0000' and
+                                b.mnemonic == 'CALL' and b.operand == 'vm_lt'):
+                            result.append(Instruction(
+                                kind='instr', mnemonic='CALL',
+                                operand='vm_zlt',
+                                comment='peephole: 0 < → 0<'))
+                            i += 2
+                            changed = True
+                            continue
+
+                        # LIT $0000 / CALL vm_gt  →  CALL vm_zgt
+                        if (a.mnemonic == 'LIT' and a.operand == '$0000' and
+                                b.mnemonic == 'CALL' and b.operand == 'vm_gt'):
+                            result.append(Instruction(
+                                kind='instr', mnemonic='CALL',
+                                operand='vm_zgt',
+                                comment='peephole: 0 > → 0>'))
+                            i += 2
+                            changed = True
+                            continue
+
+                        # CALL vm_swap / DROP  →  NIP
+                        if (a.mnemonic == 'CALL' and a.operand == 'vm_swap' and
+                                b.mnemonic == 'DROP'):
+                            result.append(Instruction(
+                                kind='instr', mnemonic='NIP',
+                                comment='peephole: swap drop → nip'))
+                            i += 2
+                            changed = True
+                            continue
+
+                        # LIT n / DROP  →  remove both (dead code)
+                        if (a.mnemonic == 'LIT' and b.mnemonic == 'DROP'):
+                            result.append(Instruction(
+                                kind='comment',
+                                text=f'; peephole: removed dead LIT {a.operand} DROP'))
+                            i += 2
+                            changed = True
+                            continue
+
+                result.append(self._instructions[i])
+                i += 1
+            self._instructions = result
+
+    def _render(self) -> str:
+        lines = []
+        for instr in self._instructions:
+            if instr.kind == 'blank':
+                lines.append('')
+            elif instr.kind == 'comment':
+                lines.append(instr.text)
+            elif instr.kind == 'label':
+                lines.append(f'{instr.text}:')
+            elif instr.kind == 'raw':
+                lines.append(instr.text)
+            elif instr.kind == 'instr':
+                parts = instr.mnemonic
+                if instr.operand:
+                    parts = f'{instr.mnemonic} {instr.operand}'
+                text = f'    {parts:<20}'
+                if instr.comment:
+                    text += f' ; {instr.comment}'
+                lines.append(text)
+        return '\n'.join(lines) + '\n'
+
+    @staticmethod
+    def _emit_comment_raw(result: list, text: str):
+        result.append(Instruction(kind='comment', text=f'; {text}'))
 
     # ------------------------------------------------------------------
     # File-level boilerplate
@@ -450,9 +567,10 @@ class CodeGenerator:
         self._emit(f'; {node.defining_word} {node.new_name}')
         # _does stub: push data address then execute does> body
         self._emit_label(f'{sym}_does')
-        self._emit_instr(f'LIT {sym}', f'push data address of {node.new_name}')
-        self._emit_instr(f'CALL {does_sym}', f'execute does> body of {node.defining_word}')
-        self._emit_instr('EXIT')
+        self._emit_instr('LIT', sym, f'push data address of {node.new_name}')
+        self._emit_instr('CALL', does_sym, f'execute does> body of {node.defining_word}')
+        self._emit_instr('EXIT', '', '')
+
         # data label and allocation
         self._emit_label(sym)
         if size > 0:
@@ -471,7 +589,7 @@ class CodeGenerator:
         self._emit_label(does_sym)
         str_pool = []
         self._gen_body(node.does_body, str_pool)
-        self._emit_instr('EXIT', 'return from does> body')
+        self._emit_instr('EXIT', '', 'return from does> body')
         for lbl, text in str_pool:
             self._emit_label(lbl)
             escaped = text.replace('"', '\\"')
@@ -561,7 +679,7 @@ class CodeGenerator:
         sym = _mangle(node.name)
         self._emit(f'; variable {node.name}')
         self._emit_label(sym)
-        self._emit_instr('.word 0', f'storage for variable {node.name}')
+        self._emit_instr('.word', '0', f'storage for variable {node.name}')
         self._emit()
         self._variables.add(node.name)
 
@@ -576,7 +694,7 @@ class CodeGenerator:
         self._emit_label(sym)
         str_pool: list[tuple[str, str]] = []
         self._gen_body(node.body, str_pool)
-        self._emit_instr('EXIT', 'return from word')
+        self._emit_instr('EXIT', '', 'return from word')
         for lbl, text in str_pool:
             self._emit_label(lbl)
             escaped = text.replace('"', '\\"')
@@ -609,18 +727,18 @@ class CodeGenerator:
     def _gen_stmt(self, node: ASTNode, str_pool: list):
         if isinstance(node, NumberLit):
             u16 = _to_u16(node.value)
-            self._emit_instr(f'LIT ${u16:04X}', f'push {node.value}')
+            self._emit_instr('LIT', f'${u16:04X}', f'push {node.value}')
         elif isinstance(node, StringLit):
             lbl = self._fresh_str_label()
             str_pool.append((lbl, node.text))
-            self._emit_instr(f'LIT {lbl}',            'push string address')
-            self._emit_instr(f'LIT {len(node.text)}', 'push string length')
+            self._emit_instr('LIT', lbl, 'push string address')
+            self._emit_instr('LIT', str(len(node.text)), 'push string length')
 
         elif isinstance(node, PrintString):
             lbl = self._fresh_str_label()
             str_pool.append((lbl, node.text))
-            self._emit_instr(f'LIT {lbl}', f'print: "{node.text[:30]}"')
-            self._emit_instr('CALL vm_cputs',    'print null-terminated string')
+            self._emit_instr('LIT', lbl, f'print: "{node.text[:30]}"')
+            self._emit_instr('CALL', 'vm_cputs', 'print null-terminated string')
 
         elif isinstance(node, WordCall):
             self._gen_word_call(node)
@@ -638,11 +756,10 @@ class CodeGenerator:
             self._gen_do_loop(node, str_pool)
 
         elif isinstance(node, Comma):
-            self._emit_instr('CALL vm_comma', 'compiles TOS into memory')
+            self._emit_instr('CALL', 'vm_comma', 'compiles TOS into memory')
 
         elif isinstance(node, CComma):
-            self._emit_instr('CALL vm_ccomma', 'compiles TOS LSB into memory')
-
+            self._emit_instr('CALL', 'vm_ccomma', 'compiles TOS LSB into memory')
         else:
             raise CodeGenError(f"Unknown statement node {type(node).__name__}", node)
 
@@ -652,31 +769,31 @@ class CodeGenerator:
         # Inline VM primitive?
         if name in INLINE_OPS:
             instr = INLINE_OPS[name]
-            self._emit_instr(instr, f'( {name} )')
+            self._emit_instr(instr, '', f'( {name} )')
             return
 
         # Runtime call?
         if name in RUNTIME_CALLS:
             target = RUNTIME_CALLS[name]
-            self._emit_instr(f'CALL {target}', f'( {name} )')
+            self._emit_instr('CALL', target, f'( {name} )')
             return
 
         # does-word — call its _does stub
         if name in self._does_words:
             sym = _mangle(name)
-            self._emit_instr(f'CALL {sym}_does', f'( {name} )')
+            self._emit_instr('CALL', f'{sym}_does', f'( {name} )')
             return
 
         # Known constant — compile-time fold to LIT
         if name in self._constants:
             val = self._constants[name]
-            self._emit_instr(f'LIT ${_to_u16(val):04X}', f'constant {name} = {val}')
+            self._emit_instr('LIT', f'${_to_u16(val):04X}', f'constant {name} = {val}')
             return
 
         # Variable or create — push its address
         if name in self._variables or name in self._creates:
             sym = _mangle(name)
-            self._emit_instr(f'LIT {sym}', f'address of {name}')
+            self._emit_instr('LIT', sym, f'address of {name}')
             return
 
         # recurse — call the current word
@@ -684,14 +801,14 @@ class CodeGenerator:
             if not self._current_word:
                 raise CodeGenError("'recurse' used outside a word definition", node)
             sym = _mangle(self._current_word)
-            self._emit_instr(f'CALL {sym}', 'recurse')
+            self._emit_instr('CALL', sym, 'recurse')
             return
 
         # inline word — expand body directly
         if name in self._inline_words:
             word_node = self._inline_words[name]
             str_pool = []
-            self._emit_instr(f'; inline {name}')
+            self._emit(f'; inline {name}')
             self._gen_body(word_node.body, str_pool)
             for lbl, text in str_pool:
                 self._emit_label(lbl)
@@ -701,7 +818,7 @@ class CodeGenerator:
 
         # Known user-defined — word mangle the name
         sym = _mangle(name)
-        self._emit_instr(f'CALL {sym}', f'call {name}')
+        self._emit_instr('CALL', sym, f'call {name}')
 
     # ------------------------------------------------------------------
     # Control structures
@@ -711,11 +828,11 @@ class CodeGenerator:
         else_lbl = self._fresh_label('else')
         end_lbl  = self._fresh_label('endif')
 
-        self._emit_instr(f'ZBRANCH {else_lbl}', 'if: branch if zero (false)')
+        self._emit_instr('ZBRANCH', else_lbl, 'if: branch if zero (false)')
         self._gen_body(node.consequent, str_pool)
 
         if node.alternate:
-            self._emit_instr(f'BRANCH {end_lbl}', 'if: jump to endif')
+            self._emit_instr('BRANCH', end_lbl, 'if: jump to endif')
             self._emit_label(else_lbl)
             self._gen_body(node.alternate, str_pool)
         else:
@@ -727,7 +844,7 @@ class CodeGenerator:
         top_lbl = self._fresh_label('begin')
         self._emit_label(top_lbl)
         self._gen_body(node.body, str_pool)
-        self._emit_instr(f'ZBRANCH {top_lbl}',
+        self._emit_instr('ZBRANCH', top_lbl,
                          'until: loop if top-of-stack is zero (false)')
 
     def _gen_begin_while_repeat(self, node: BeginWhileRepeat, str_pool: list):
@@ -735,22 +852,22 @@ class CodeGenerator:
         end_lbl = self._fresh_label('repeat')
         self._emit_label(top_lbl)
         self._gen_body(node.test, str_pool)
-        self._emit_instr(f'ZBRANCH {end_lbl}', 'while: exit if zero (false)')
+        self._emit_instr('ZBRANCH', end_lbl, 'while: exit if zero (false)')
         self._gen_body(node.body, str_pool)
-        self._emit_instr(f'BRANCH {top_lbl}', 'repeat: unconditional jump back')
+        self._emit_instr('BRANCH', top_lbl, 'repeat: unconditional jump back')
         self._emit_label(end_lbl)
 
     def _gen_do_loop(self, node: DoLoop, str_pool: list):
         top_lbl  = self._fresh_label('do')
         end_lbl  = self._fresh_label('loop')
         step_fn  = 'vm_plus_loop_step' if node.plus_loop else 'vm_do_loop_step'
-        self._emit_instr('TWOTOR', 'do: push limit and index to R')
+        self._emit_instr('TWOTOR', '', 'do: push limit and index to R')
         self._emit_label(top_lbl)
         self._gen_body(node.body, str_pool)
-        self._emit_instr(f'CALL {step_fn}',      'loop: increment and test')
-        self._emit_instr(f'ZBRANCH {top_lbl}',   'loop: branch if not done')
-        self._emit_instr('TWORFROM', 'loop: discard limit and index from R')
-        self._emit_instr('CALL _2drop',          'loop: drop limit and index')
+        self._emit_instr('CALL', step_fn, 'loop: increment and test')
+        self._emit_instr('ZBRANCH', top_lbl, 'loop: branch if not done')
+        self._emit_instr('TWORFROM', '', 'loop: discard limit and index from R')
+        self._emit_instr('CALL', '_2drop', 'loop: drop limit and index')
         self._emit_label(end_lbl)
 
     # ------------------------------------------------------------------

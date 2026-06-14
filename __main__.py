@@ -31,6 +31,8 @@ def main():
                     help='Print AST and exit')
     ap.add_argument('--const', action='append', metavar='NAME=VALUE',
                     help='Define a compile-time constant (may be repeated)')
+    ap.add_argument('--no-peephole', action='store_true',
+                    help='Disable peephole optimization')
     args = ap.parse_args()
 
     src_path = pathlib.Path(args.source)
