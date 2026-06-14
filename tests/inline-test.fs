@@ -10,6 +10,8 @@
 : unsafe ( n -- n ) >r r> ;
 \ .inline unsafe   \ would cause compile error
 
+: peephole 1 + 2 * ;
+
 : inline-test
     cr ." inline test" cr
     ." 5 double (expect 10) = " 5 double . cr
