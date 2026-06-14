@@ -81,14 +81,12 @@ def _generate_inc(stem: str, exports: list) -> str:
 
 def generate(program: Program, stem: str = '',
              predefined: dict = None,
-             out: TextIO | None = None) -> CompileResult:
+             no_peephole: bool = False) -> CompileResult:
     buf = io.StringIO()
-    cg  = CodeGenerator(out=buf, stem=stem)
+    cg  = CodeGenerator(stem=stem)
     if predefined:
         cg._constants.update(predefined)
-    text = cg.generate(program)
-    if out is not None:
-        out.write(text)
+    text = cg.generate(program, no_peephole)
     exports = sorted(cg._exports)
     inc = _generate_inc(stem, exports) if exports else ''
     return CompileResult(asm=text, exports=exports, inc=inc)
@@ -255,7 +253,6 @@ class CodeGenError(Exception):
 
 @dataclass
 class CodeGenerator:
-    out:          TextIO = field(default_factory=io.StringIO)
     stem:         str    = ''
     _label_count: int    = field(default=0, init=False)
     _constants:   dict   = field(default_factory=dict, init=False)
@@ -277,7 +274,7 @@ class CodeGenerator:
     # ------------------------------------------------------------------
     # Public entry point
     # ------------------------------------------------------------------
-    def generate(self, program: Program) -> str:
+    def generate(self, program: Program, no_peephole: bool = False) -> str:
         # collect DefineDirective symbols for pre-pass
         self._defines = {n.symbol for n in program.definitions
                          if isinstance(n, DefineDirective)}
@@ -292,7 +289,8 @@ class CodeGenerator:
         for node in program.definitions:
             self._top_def(node)
         self._emit_file_footer()
-        self._peephole()
+        if not no_peephole:
+            self._peephole()
         return self._render()
 
     # ------------------------------------------------------------------
@@ -391,6 +389,26 @@ class CodeGenerator:
                             result.append(Instruction(
                                 kind='comment',
                                 text=f'; peephole: removed dead LIT {a.operand} DROP'))
+                            i += 2
+                            changed = True
+                            continue
+
+                        # LIT $0001 / ADD  →  ONEPLUS
+                        if (a.mnemonic == 'LIT' and a.operand == '$0001' and
+                                b.mnemonic == 'ADD'):
+                            result.append(Instruction(
+                                kind='instr', mnemonic='ONEPLUS',
+                                comment='peephole: 1 + → 1+'))
+                            i += 2
+                            changed = True
+                            continue
+
+                        # LIT $0001 / SUB  →  ONEMINUS
+                        if (a.mnemonic == 'LIT' and a.operand == '$0001' and
+                                b.mnemonic == 'SUB'):
+                            result.append(Instruction(
+                                kind='instr', mnemonic='ONEMINUS',
+                                comment='peephole: 1 - → 1-'))
                             i += 2
                             changed = True
                             continue

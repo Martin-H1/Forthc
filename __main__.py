@@ -81,7 +81,8 @@ def main():
 
     # --- Code generation ---
     try:
-        result = generate(program, stem=stem, predefined=predefined)
+        result = generate(program, stem=stem, predefined=predefined,
+                          no_peephole=args.no_peephole)
     except CodeGenError as e:
         print(f"forthc: codegen error: {e}", file=sys.stderr)
         sys.exit(1)
