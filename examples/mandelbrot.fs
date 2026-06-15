@@ -1,12 +1,22 @@
 .main mandelbrot
 
-\ Setup constants to remove magic numbers to allow
-\ for greater zoom with different scale factors.
-20    constant MAXITER
--39   constant MINVAL   \ 20 * -1.95
-40    constant MAXVAL   \ 20 * 2
-$0280 constant RESCALE  \ 20 * 32
-$0A00 constant S_ESCAPE \ 20 * 32 * 4
+\ Calculate the Mandelbot set using complex numbers. Normally this requires
+\ floating point arithmetic, but we'll use fixed point and multiply by a
+\ scaling factor. Since the Mandelbrot set lies within -2, -2i to +2, 2i,
+\ we need at least one sign bit and two integer bits. However, the escape
+\ calculation requires more bits to avoid an overflow. So seven bits should
+\ be plenty. This allows the remaining bits to be used for fractional bits.
+
+\ Setup constants to remove magic numbers. Interogate the runtime with cell
+\ to determine machine precision. This allows greater zoom with different
+\ scale factors.
+
+256          constant RESCALE \ 1 cell 8 * 8 -
+RESCALE -2 * constant MINVAL
+RESCALE  2 * constant MAXVAL
+20           constant MAXITER
+RESCALE 4 *  constant S_ESCAPE
+MAXVAL MINVAL - 78 / constant STEP
 
 \ These variables hold values during the escape calculation.
 variable c-real
@@ -17,29 +27,27 @@ variable iters
 
 \ Compute squares, but rescale to remove extra scaling factor.
 : zr_sq z-real @ dup RESCALE */ ;
-.inline zr_sq
-
 : zi_sq z-imag @ dup RESCALE */ ;
-.inline zi_sq
 
-\ Translate escape iters to ascii greyscale.
-: .CHAR
+\ Translate escape count to ascii greyscale.
+: .char
   s" ..,'~!^:;[/<&?oxOX#   "
   drop + 1
   type ;
 
 \ Numbers above 4 will always escape, so compare to a scaled value.
-: escapes? S_ESCAPE > ;
-.inline escapes?
+: escapes?
+  S_ESCAPE > ;
 
 \ Increment count and compare to max iterations.
-: count_and_test? iters @ 1+ dup iters ! MAXITER > ;
-.inline count_and_test?
+: count_and_test?
+  iters @ 1+ dup iters !
+  MAXITER > ;
 
 \ stores the row column values from the stack for the escape calculation.
-: init_vars ( i-val r-val -- )
-  5 lshift dup c-real ! z-real !	\ 32 * r-val
-  5 lshift dup c-imag ! z-imag !	\ 32 * i-val
+: init_vars
+  dup c-real ! z-real !
+  dup c-imag ! z-imag !
   1 iters ! ;
 
 \ Performs a single iteration of the escape calculation.
@@ -52,12 +60,12 @@ variable iters
       - c-real @ +   \ leave result on stack
       z-real @ z-imag @ RESCALE */ 1 lshift
       c-imag @ + z-imag !
-      z-real !                   \ Store stack item into ZREAL
+      z-real !                   \ Store stack item into z-real
       count_and_test?
     then ;
 
 \ Iterates on a single cell to compute its escape factor.
-: docell ( i-val r-val -- )
+: docell
   init_vars
   begin
     doescape
@@ -66,10 +74,12 @@ variable iters
   .char ;
 
 \ For each cell in a row.
-: dorow ( i-val -- )
+: dorow
   MAXVAL MINVAL do
-    dup i docell
-  loop
+    dup i
+    docell
+    STEP
+  +loop
   drop ;
 
 \ For each row in the set.
@@ -77,4 +87,5 @@ variable iters
   cr
   MAXVAL MINVAL do
     i dorow cr
-  loop ;
+    STEP
+  +loop ;
