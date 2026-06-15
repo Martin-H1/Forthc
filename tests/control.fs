@@ -63,6 +63,10 @@
     \ Non-zero start index
     ." 5 to 9 by 2 (expect 5 7 9) = "
     11 5 do i . 2 +loop cr
+
+    \ negative to positive loop
+    ." -62 to 64 by 8 = "
+    64 -62 do i . 8 +loop cr
 ;
 
 : factorial ( n -- n! )

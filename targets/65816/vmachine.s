@@ -1102,12 +1102,19 @@ PUBLIC  vm_plus_loop_step
         CLC
         ADC  3,S                    ; index += step
         STA  3,S                    ; store updated index
-        CMP  5,S                    ; compare index with limit
-        BCC  @continue              ; index < limit, keep looping
-        LDA  #$FFFF                 ; done: push true (ZBRANCH will not branch)
+        ; signed comparison: index < limit
+        SEC
+        SBC  5,S                    ; index - limit
+        BVS  @overflow              ; overflow-aware signed compare
+        BMI  @continue              ; result negative = index < limit
+        LDA  #$FFFF                 ; done
+        BRA  @return
+@overflow:
+        BPL  @continue              ; overflow + positive = index < limit
+        LDA  #$FFFF                 ; done
         BRA  @return
 @continue:
-        LDA  #0                     ; not done: push false (ZBRANCH branches back)
+        LDA  #0                     ; not done
 @return:
         DEX
         DEX
