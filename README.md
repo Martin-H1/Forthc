@@ -438,11 +438,89 @@ python tools/show_mangled.py "#>" "#s" "ud/mod"
 
 ---
 
+## Performance
+
+The compiler generates subroutine-threaded code with short primitives inlined
+as assembler macros. This eliminates the NEXT dispatch overhead of indirect-
+threaded interpreters while keeping the code compact.
+
+### Benchmark: Mandelbrot set
+
+The Mandelbrot set generator (`examples/mandelbrot.fs`) is used as the primary
+performance benchmark. It exercises fixed-point arithmetic heavily, particularly
+signed multiply (`m*`), unsigned multiply (`um*`), and scaled division (`*/`).
+
+Tested on a WDC 65816 SBC at 8MHz:
+
+| Version | Time | vs ITC |
+|---|---|---|
+| ITC Forth interpreter | 67.0s | baseline |
+| Forthc (initial) | 44.6s | −33.5% |
+| + `.inline` directives | 44.1s | −34.2% |
+| + Peephole optimizer | 43.6s | −34.9% |
+| + Loop unrolling (`-D UNROLL`) | 42.9s | −36.0% |
+| + `*/` power-of-two specialization | 27.2s | **−59.4%** |
+
+### Optimizations
+
+**Inlining** — mark short words with `.inline` to expand them at call sites
+instead of generating a JSR/RTS pair:
+```forth
+: negate ( n -- -n ) invert 1+ ;
+.inline negate
+```
+
+**Peephole optimizer** — the compiler automatically replaces common instruction
+sequences with more efficient equivalents:
+
+| Pattern | Replacement |
+|---|---|
+| `LIT $0001 / ADD` | `ONEPLUS` |
+| `LIT $0001 / SUB` | `ONEMINUS` |
+| `LIT $0001 / CALL vm_lshift` | `TWOSTAR` |
+| `LIT $0000 / CALL vm_eq` | `CALL vm_zeq` |
+| `LIT $0000 / CALL vm_lt` | `CALL vm_zlt` |
+| `LIT $0000 / CALL vm_gt` | `CALL vm_zgt` |
+| `CALL vm_swap / DROP` | `NIP` |
+| `LIT n / DROP` | *(eliminated)* |
+
+Disable with `--no-peephole` for debugging.
+
+**Loop unrolling** — pass `-D UNROLL` to ca65 to unroll the inner loops in
+`vm_umstar` and `vm_umslashmod`, eliminating loop overhead in the software
+multiply and divide routines:
+```makefile
+CA65FLAGS = -I ../targets/65816 -D UNROLL
+```
+
+**`*/` power-of-two specialization** — when the divisor in a `*/` expression
+is a compile-time constant that is a power of two, the compiler replaces the
+full divide with an arithmetic right shift:
+```forth
+1024 constant RESCALE
+z-real @ dup RESCALE */   \ compiles to: multiply then shift right 10 bits
+```
+
+This is the single largest optimization for fixed-point arithmetic programs.
+Use power-of-two scale factors wherever possible to take advantage of it.
+
+---
+
 ## Running the tests
 
 ```bash
 cd tests
 make all
+```
+
+Pass `--no-peephole` to disable the peephole optimizer for debugging:
+```bash
+python __main__.py --no-peephole source.fs
+```
+
+Pass `--const` to define compile-time constants for target-specific values:
+```bash
+python __main__.py --const CELL_SIZE=2 --const CELL_BITS=16 source.fs
 ```
 
 Test modules covering:
