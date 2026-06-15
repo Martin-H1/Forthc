@@ -3,10 +3,10 @@
 \ Setup constants to remove magic numbers to allow
 \ for greater zoom with different scale factors.
 20    constant MAXITER
--39   constant MINVAL
-40    constant MAXVAL
-$0280 constant RESCALE
-$0A00 constant S_ESCAPE
+-39   constant MINVAL   \ 20 * -1.95
+40    constant MAXVAL   \ 20 * 2
+$0280 constant RESCALE  \ 20 * 32
+$0A00 constant S_ESCAPE \ 20 * 32 * 4
 
 \ These variables hold values during the escape calculation.
 variable c-real
@@ -38,8 +38,8 @@ variable iters
 
 \ stores the row column values from the stack for the escape calculation.
 : init_vars ( i-val r-val -- )
-  5 lshift dup c-real ! z-real !
-  5 lshift dup c-imag ! z-imag !
+  5 lshift dup c-real ! z-real !	\ 32 * r-val
+  5 lshift dup c-imag ! z-imag !	\ 32 * i-val
   1 iters ! ;
 
 \ Performs a single iteration of the escape calculation.
