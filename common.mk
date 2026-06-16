@@ -1,17 +1,18 @@
 # Common set of macros to enable Linux versus Windows portability.
 ifeq ($(OS),Windows_NT)
     / = $(strip \)
+    65816S = "%HOMEPATH%\Documents\git\65816\tools\65816S.exe"
     CA65 = "%HOMEPATH%\cc65-snapshot-win32\bin\ca65.exe"
+    FORTHC = $(PYTHON) "$(FORTHC_PATH)" $(FORTHC_FLAGS)
     LD65 = "%HOMEPATH%\cc65-snapshot-win32\bin\ld65.exe"
+    MAKE = "%HOMEPATH%\usr\local\wbin\make"
     PY65MON = "%HOMEPATH%\AppData\Local\Programs\Python\Python311\Scripts\py65mon"
     PYTHON = "C:\Users\mheer\AppData\Local\Python\bin\python.exe"
-    FORTHC = $(PYTHON) "$(FORTHC_PATH)" $(FORTHC_FLAGS)
-    65816S = "%HOMEPATH%\Documents\git\65816\tools\65816S.exe"
-    SREC_CAT = "C:\Program Files\srecord\bin\srec_cat.exe"
     RM = del /f /q
     RMDIR = rmdir /s /q
     SEP =\\
     SHELL_EXT = bat
+    SREC_CAT = "C:\Program Files\srecord\bin\srec_cat.exe"
     TOUCH = type nul >
 else
     / = /
