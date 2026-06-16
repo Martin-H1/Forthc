@@ -5,70 +5,70 @@ FORTHC_FLAGS = --const CELL_SIZE=2 --const CELL_BITS=16
 FORTHC_PATH  = ..\__main__.py
 SDK_LIB      = ../sdk/lib/vmachine.lib
 
-all: debug
+all: release
 
-debug: obj obj/debug bin bin/debug \
-	bin/debug/control.bin bin/debug/control.srec \
-	bin/debug/const-expr.bin bin/debug/const-expr.srec \
-	bin/debug/core-test.bin bin/debug/core-test.srec \
-	bin/debug/double.bin bin/debug/double.srec \
-	bin/debug/inline-test.bin bin/debug/inline-test.srec \
-	bin/debug/logic.bin bin/debug/logic.srec \
-	bin/debug/math.bin bin/debug/math.srec \
-	bin/debug/memory.bin bin/debug/memory.srec \
-	bin/debug/module.bin bin/debug/module.srec \
-	bin/debug/output.bin bin/debug/output.srec \
-	bin/debug/stack.bin bin/debug/stack.srec \
-	bin/debug/string.bin bin/debug/string.srec
+release: obj obj/release bin bin/release \
+	bin/release/control.bin bin/release/control.srec \
+	bin/release/const-expr.bin bin/release/const-expr.srec \
+	bin/release/core-test.bin bin/release/core-test.srec \
+	bin/release/double.bin bin/release/double.srec \
+	bin/release/inline-test.bin bin/release/inline-test.srec \
+	bin/release/logic.bin bin/release/logic.srec \
+	bin/release/math.bin bin/release/math.srec \
+	bin/release/memory.bin bin/release/memory.srec \
+	bin/release/module.bin bin/release/module.srec \
+	bin/release/output.bin bin/release/output.srec \
+	bin/release/stack.bin bin/release/stack.srec \
+	bin/release/string.bin bin/release/string.srec
 
 # All bins now link against SDK library instead of individual .o files
-bin/debug/control.bin: obj/debug/control.o $(SDK_LIB)
-	$(LD65) -C debug.cfg -o $@ -m bin/debug/control.map \
-		obj/debug/control.o $(SDK_LIB)
+bin/release/control.bin: obj/release/control.o $(SDK_LIB)
+	$(LD65) -C debug.cfg -o $@ -m bin/release/control.map \
+		obj/release/control.o $(SDK_LIB)
 
-bin/debug/const-expr.bin: obj/debug/const-expr.o $(SDK_LIB)
-	$(LD65) -C debug.cfg -o $@ -m bin/debug/const-expr.map \
-		obj/debug/const-expr.o $(SDK_LIB)
+bin/release/const-expr.bin: obj/release/const-expr.o $(SDK_LIB)
+	$(LD65) -C debug.cfg -o $@ -m bin/release/const-expr.map \
+		obj/release/const-expr.o $(SDK_LIB)
 
-bin/debug/core-test.bin: obj/debug/core-test.o $(SDK_LIB)
-	$(LD65) -C debug.cfg -o $@ -m bin/debug/core-test.map \
-		obj/debug/core-test.o $(SDK_LIB)
+bin/release/core-test.bin: obj/release/core-test.o $(SDK_LIB)
+	$(LD65) -C debug.cfg -o $@ -m bin/release/core-test.map \
+		obj/release/core-test.o $(SDK_LIB)
 
-bin/debug/double.bin: obj/debug/double.o $(SDK_LIB)
-	$(LD65) -C debug.cfg -o $@ -m bin/debug/double.map \
-		obj/debug/double.o $(SDK_LIB)
+bin/release/double.bin: obj/release/double.o $(SDK_LIB)
+	$(LD65) -C debug.cfg -o $@ -m bin/release/double.map \
+		obj/release/double.o $(SDK_LIB)
 
-bin/debug/inline-test.bin: obj/debug/inline-test.o $(SDK_LIB)
-	$(LD65) -C debug.cfg -o $@ -m bin/debug/inline-test.map \
-		obj/debug/inline-test.o $(SDK_LIB)
+bin/release/inline-test.bin: obj/release/inline-test.o $(SDK_LIB)
+	$(LD65) -C debug.cfg -o $@ -m bin/release/inline-test.map \
+		obj/release/inline-test.o $(SDK_LIB)
 
-bin/debug/logic.bin: obj/debug/logic.o $(SDK_LIB)
-	$(LD65) -C debug.cfg -o $@ -m bin/debug/logic.map \
-		obj/debug/logic.o $(SDK_LIB)
+bin/release/logic.bin: obj/release/logic.o $(SDK_LIB)
+	$(LD65) -C debug.cfg -o $@ -m bin/release/logic.map \
+		obj/release/logic.o $(SDK_LIB)
 
-bin/debug/math.bin: obj/debug/math.o $(SDK_LIB)
-	$(LD65) -C debug.cfg -o $@ -m bin/debug/math.map \
-		obj/debug/math.o $(SDK_LIB)
+bin/release/math.bin: obj/release/math.o $(SDK_LIB)
+	$(LD65) -C debug.cfg -o $@ -m bin/release/math.map \
+		obj/release/math.o $(SDK_LIB)
 
-bin/debug/memory.bin: obj/debug/memory.o $(SDK_LIB)
-	$(LD65) -C debug.cfg -o $@ -m bin/debug/memory.map \
-		obj/debug/memory.o $(SDK_LIB)
+bin/release/memory.bin: obj/release/memory.o $(SDK_LIB)
+	$(LD65) -C debug.cfg -o $@ -m bin/release/memory.map \
+		obj/release/memory.o $(SDK_LIB)
 
-bin/debug/module.bin: obj/debug/module.o $(SDK_LIB)
-	$(LD65) -C debug.cfg -o $@ -m bin/debug/module.map \
-		obj/debug/module.o $(SDK_LIB)
+bin/release/module.bin: obj/release/module.o $(SDK_LIB)
+	$(LD65) -C debug.cfg -o $@ -m bin/release/module.map \
+		obj/release/module.o $(SDK_LIB)
 
-bin/debug/output.bin: obj/debug/output.o $(SDK_LIB)
-	$(LD65) -C debug.cfg -o $@ -m bin/debug/output.map \
-		obj/debug/output.o $(SDK_LIB)
+bin/release/output.bin: obj/release/output.o $(SDK_LIB)
+	$(LD65) -C debug.cfg -o $@ -m bin/release/output.map \
+		obj/release/output.o $(SDK_LIB)
 
-bin/debug/stack.bin: obj/debug/stack.o $(SDK_LIB)
-	$(LD65) -C debug.cfg -o $@ -m bin/debug/stack.map \
-		obj/debug/stack.o $(SDK_LIB)
+bin/release/stack.bin: obj/release/stack.o $(SDK_LIB)
+	$(LD65) -C debug.cfg -o $@ -m bin/release/stack.map \
+		obj/release/stack.o $(SDK_LIB)
 
-bin/debug/string.bin: obj/debug/string.o $(SDK_LIB)
-	$(LD65) -C debug.cfg -o $@ -m bin/debug/string.map \
-		obj/debug/string.o $(SDK_LIB)
+bin/release/string.bin: obj/release/string.o $(SDK_LIB)
+	$(LD65) -C debug.cfg -o $@ -m bin/release/string.map \
+		obj/release/string.o $(SDK_LIB)
 
 %.s : %.fs
 	$(FORTHC) $<
@@ -79,12 +79,12 @@ bin/debug/string.bin: obj/debug/string.o $(SDK_LIB)
 
 clean:
 	-$(RM) *.s *.inc
-	-$(RM) bin$(SEP)debug$(SEP)*.map
-	-$(RM) bin$(SEP)debug$(SEP)*.bin
-	-$(RM) bin$(SEP)debug$(SEP)*.srec
-	-$(RM) obj$(SEP)debug$(SEP)*.lst
-	-$(RM) obj$(SEP)debug$(SEP)*.o
-	-$(RMDIR) bin$(SEP)debug
+	-$(RM) bin$(SEP)release$(SEP)*.map
+	-$(RM) bin$(SEP)release$(SEP)*.bin
+	-$(RM) bin$(SEP)release$(SEP)*.srec
+	-$(RM) obj$(SEP)release$(SEP)*.lst
+	-$(RM) obj$(SEP)release$(SEP)*.o
+	-$(RMDIR) bin$(SEP)release
 	-$(RMDIR) bin
-	-$(RMDIR) obj$(SEP)debug
+	-$(RMDIR) obj$(SEP)release
 	-$(RMDIR) obj
