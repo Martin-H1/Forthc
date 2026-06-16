@@ -1,5 +1,7 @@
 \ memory.fs - memory access regresssion tests
 
+.include "core.inc"
+
 .main test-memory
 
 create buf 32 allot

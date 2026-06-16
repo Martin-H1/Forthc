@@ -1,5 +1,7 @@
 \ stack.fs - stack function regresssion tests.
 
+.include "core.inc"
+
 .main stack-test
 
 : stack-test

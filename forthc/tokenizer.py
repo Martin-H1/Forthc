@@ -35,12 +35,14 @@ class TType(Enum):
     DO          = auto()   # do
     LOOP        = auto()   # loop
     PLUSLOOP    = auto()   # +loop
+    DQUOTE      = auto()   # bare "string" (used for .include filenames)
     DOTQUOTE    = auto()   # ."  (print string literal)
     SQUOTE      = auto()   # S"  (string literal onto stack)
     DEFINE      = auto()   # .define
     ENDSTRUCT   = auto()   # .end-struct
     EXPORT      = auto()   # .export  (extension: set word public for linker)
     FIELD       = auto()   # .field
+    INCLUDE     = auto()   # .include
     INLINE      = auto()   # .inline
     MAIN        = auto()   # .main    (extension: designate entry-point word)
     ORIGIN      = auto()   # .origin  (extension: set origin address)
@@ -72,6 +74,7 @@ KEYWORD_MAP = {
     '.define':  TType.DEFINE,
     '.export':  TType.EXPORT,
     '.field':   TType.FIELD,
+    '.include': TType.INCLUDE,
     '.inline':  TType.INLINE,
     '.main':    TType.MAIN,
     '.origin':  TType.ORIGIN,
@@ -206,6 +209,13 @@ def tokenize(source: str) -> list:
             else:                           # Z"
                 ttype = TType.ZQUOTE
             tokens.append(Token(ttype, payload, tok_line, tok_col))
+            continue
+
+        # Bare double-quoted string - only valid after .include
+        if source[pos] == '"':
+            advance()   # skip opening "
+            payload = read_string('"')
+            tokens.append(Token(TType.DQUOTE, payload, tok_line, tok_col))
             continue
 
         # Read a bare whitespace-delimited word

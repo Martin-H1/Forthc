@@ -136,24 +136,6 @@ RNOS            = 3
         .import vm_pad_end_addr
         .import vm_tmp1
         .import vm_tmp2
-
-.include "core.inc"
-
-.ifndef __pictured_fs__
-__pictured_fs__ = 1
-        .import _hash
-        .import _hash_to
-        .import _hashs
-        .import _dotr
-        .import _from_hash
-        .import d_dot
-        .import d_dotr
-        .import hold
-        .import holds
-        .import sign
-        .import u_dotr
-        .import ud_slmod
-.endif
 .endif
 
 ; ---------------------------------------------------------------------------

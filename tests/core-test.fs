@@ -1,3 +1,6 @@
+.include "core.inc"
+.include "pictured.inc"
+
 .main core-test
 
 : within-test

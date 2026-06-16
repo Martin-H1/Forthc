@@ -46,7 +46,8 @@ from .ast_nodes import (
     DefineDirective, ExportDirective, OriginDirective, SegmentDirective,
     MainDirective, NumberLit, StringLit, PrintString,
     WordCall, IfThen, BeginUntil, BeginWhileRepeat, DoLoop,
-    ASTNode, Comma, CComma, DefiningWord, DefiningCall, InlineDirective,
+    ASTNode, Comma, CComma, DefiningWord, DefiningCall,
+    IncludeDirective, InlineDirective,
 )
 
 @dataclass
@@ -552,6 +553,9 @@ class CodeGenerator:
             pass    # emitted before .include in _emit_file_header
         elif isinstance(node, ExportDirective):
             pass    # handled in pre-pass; _gen_word emits the .export
+        elif isinstance(node, IncludeDirective):
+            self._emit(f'.include "{node.filename}"')
+            self._emit()
         elif isinstance(node, InlineDirective):
             self._gen_inline_directive(node)
         elif isinstance(node, OriginDirective):

@@ -1,5 +1,7 @@
 \ double.fs - Double number regression tests
 
+.include "core.inc"
+
 .main double-test
 
 : double-test

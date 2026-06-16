@@ -11,6 +11,8 @@
 .export d.r
 .export d.
 
+.include "core.inc"
+
 \------------------------------------------------------------------------------
 \ UD/MOD ( d-low d-high u -- rem quot-low quot-high ) non-standard helper for
 \ pictured I/O. Used to divide a double by a base to get a digit to print and

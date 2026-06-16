@@ -1,5 +1,7 @@
 \ math.fs - Arithmetic regression tests
 
+.include "core.inc"
+
 .main main
 
 : base-test

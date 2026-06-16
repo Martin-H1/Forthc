@@ -101,6 +101,11 @@ class ExportDirective(ASTNode):
     word: str = ''
 
 @dataclass
+class IncludeDirective(ASTNode):
+    """.include "filename.inc"  →  pass-through to assembler"""
+    filename: str = ''
+
+@dataclass
 class InlineDirective(ASTNode):
     """.inline name  — mark word for inline expansion at call sites"""
     word: str = ''

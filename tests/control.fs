@@ -1,5 +1,7 @@
 \ control.fs - control structures regression tests
 
+.include "core.inc"
+
 .main control-test
 
 : control-test

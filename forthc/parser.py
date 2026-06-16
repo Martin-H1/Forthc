@@ -30,7 +30,8 @@ from .ast_nodes import (
     ConstantDef, VariableDef, WordDef, DefiningWord, DefiningCall,
     DefineDirective, ExportDirective, OriginDirective, SegmentDirective,
     MainDirective, Comma, CComma, NumberLit, StringLit, PrintString,
-    WordCall, IfThen, BeginUntil, BeginWhileRepeat, DoLoop, InlineDirective,
+    WordCall, IfThen, BeginUntil, BeginWhileRepeat, DoLoop,
+    IncludeDirective, InlineDirective,
 )
 
 
@@ -338,6 +339,15 @@ class Parser:
             word_tok = self._expect(TType.WORD)
             return ExportDirective(word=word_tok.value,
                                    line=tok.line, col=tok.col)
+
+        if tok.type == TType.INCLUDE:
+            self._advance()
+            if self._match(TType.DQUOTE):
+                file_tok = self._advance()
+                return IncludeDirective(filename=file_tok.value,
+                                        line=tok.line, col=tok.col)
+            raise ParseError("Expected \"filename\" after .include",
+                             self._peek())
 
         if tok.type == TType.INLINE:
             self._advance()

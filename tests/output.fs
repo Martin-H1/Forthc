@@ -1,5 +1,7 @@
 \ output.fs - output to console regression tests
 
+.include "pictured.inc"
+
 .main output-test
 
 : output-test

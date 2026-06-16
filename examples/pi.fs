@@ -16,6 +16,8 @@
 \        + 4/(10*11*12) - 4/(12*13*14)
 \    = 3.14088134088
 
+.include "core.inc"
+
 .main print_pi
 
 \ normally this requires floating point arithmetic, but we're using fixed point

@@ -11,6 +11,8 @@
 \ to determine machine precision. This allows greater zoom with different
 \ scale factors.
 
+.include "core.inc"
+
 256          constant RESCALE \ 1 cell 8 * 8 -
 RESCALE -2 * constant MINVAL
 RESCALE  2 * constant MAXVAL
