@@ -74,15 +74,13 @@ vm_base:
 HERE_INIT:
         .res $1000                  ; Here starts after all other VM data.
 
-.segment "CODE"
-
+.segment "STARTUP"
 ;----------------------------------------------------------------------------
-; MAIN — program entry point, called via JSL from the ROM monitor.
-; Link vmachine.o first so MAIN lands at the start of the CODE segment.
+; MAIN — program entry point, called via JSL from the ROM monitor. The STARTUP
+; segment to guarantee placement at a known address regardless of link order.
 ; The Forth module exports forth_main, which is the word named by .main
 ;----------------------------------------------------------------------------
 .import forth_main
-
 PUBLIC  MAIN
         REP  #$30                   ; 16-bit A and X
         LDX  #PSP_INIT              ; initialise parameter stack pointer
@@ -93,6 +91,8 @@ PUBLIC  MAIN
         JSR  forth_main
         RTL
 ENDPUBLIC
+
+.segment "CODE"
 
 PUBLIC  vm_clear
         LDX  #PSP_INIT
