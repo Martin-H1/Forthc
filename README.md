@@ -506,6 +506,27 @@ Use power-of-two scale factors wherever possible to take advantage of it.
 
 ---
 
+## Building the SDK
+
+Before building tests or examples, build the VM SDK once:
+
+```bash
+cd targets/65816
+make
+```
+
+This produces:
+- `sdk/include/` — assembler headers for all VM modules
+- `sdk/lib/vmachine.lib` — compiled VM library
+
+Then build tests:
+```bash
+cd tests
+make all
+```
+
+---
+
 ## Running the tests
 
 ```bash
@@ -552,6 +573,19 @@ forthc/
 │   ├── ast_nodes.py        AST node dataclasses
 │   ├── parser.py           recursive-descent parser
 │   └── codegen.py          VM assembly code generator
+├── targets/
+│   └── 65816/
+│       ├── vmachine.inc    65816 macro definitions + import declarations
+│       ├── vmachine.s      65816 runtime routines
+│       ├── core.fs         Forth library (math, stack, memory utils)
+│       └── pictured.fs     Pictured numeric output
+├── sdk/
+│   ├── include/
+│   │   ├── core.inc        Forth library imports
+│   │   ├── pictured.inc    Pictured numeric output imports
+│   │   └── vmachine.inc    65816 macro definitions + import declarations
+│   └── lib/
+│       └── vmachine.lib    ar65 library
 ├── examples/
 │   ├── Makefile
 │   ├── basic.fs            Simple counter and output example
@@ -559,15 +593,9 @@ forthc/
 │   ├── hanoi.fs            Recursive tower of Hanoi
 │   ├── mandelbrot.fs       Text Mandelbrot set generator
 │   └── pi.fs               Calculate Pi using the Nilakantha infinite series.
-├── targets/
-│   └── 65816/
-│       ├── vmachine.inc    65816 macro definitions + import declarations
-│       ├── vmachine.s      65816 runtime routines
-│       ├── core.fs         Forth library (math, stack, memory utils)
-│       ├── pictured.fs     Pictured numeric output
-│       └── debug.cfg       ld65 linker config ($4000 CODE, $00B4 ZP)
 ├── tests/
 │   ├── Makefile
+│   ├── debug.cfg           ld65 linker config ($4000 CODE, $00B4 ZP)
 │   ├── control.fs
 │   ├── core-test.fs
 │   ├── double.fs
