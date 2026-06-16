@@ -18,7 +18,8 @@ RESCALE -2 * constant MINVAL
 RESCALE  2 * constant MAXVAL
 20           constant MAXITER
 RESCALE 4 *  constant S_ESCAPE
-MAXVAL MINVAL - 78 / constant STEP
+MAXVAL MINVAL - 78 / constant ISTEP
+ISTEP constant RSTEP
 
 \ These variables hold values during the escape calculation.
 variable c-real
@@ -29,7 +30,10 @@ variable iters
 
 \ Compute squares, but rescale to remove extra scaling factor.
 : zr_sq z-real @ dup RESCALE */ ;
+.inline zr_sq
+
 : zi_sq z-imag @ dup RESCALE */ ;
+.inline zi_sq
 
 \ Translate escape count to ascii greyscale.
 : .char
@@ -40,6 +44,7 @@ variable iters
 \ Numbers above 4 will always escape, so compare to a scaled value.
 : escapes?
   S_ESCAPE > ;
+.inline escapes?
 
 \ Increment count and compare to max iterations.
 : count_and_test?
@@ -80,7 +85,7 @@ variable iters
   MAXVAL MINVAL do
     dup i
     docell
-    STEP
+    RSTEP
   +loop
   drop ;
 
@@ -89,5 +94,5 @@ variable iters
   cr
   MAXVAL MINVAL do
     i dorow cr
-    STEP
+    ISTEP
   +loop ;
