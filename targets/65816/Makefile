@@ -13,6 +13,7 @@ sdk: $(SDK_INC) $(SDK_LIB) \
      $(SDK_INC)/vmachine.inc \
      $(SDK_INC)/core.inc \
      $(SDK_INC)/pictured.inc \
+     $(SDK_INC)/bignum.inc \
      $(SDK_LIB)/vmachine.lib
 
 # Create SDK directories
@@ -34,6 +35,14 @@ core.s core.inc: core.fs
 $(SDK_INC)/core.inc: core.inc
 	copy core.inc $(SDK_INC)$(SEP)core.inc
 
+# Compile bignum.fs -> bignum.s + bignum.inc
+bignum.s bignum.inc: bignum.fs
+	$(FORTHC) bignum.fs
+
+# Copy bignum.inc to SDK include
+$(SDK_INC)/bignum.inc: bignum.inc
+	copy bignum.inc $(SDK_INC)$(SEP)bignum.inc
+
 # Compile pictured.fs -> pictured.s + pictured.inc
 pictured.s pictured.inc: pictured.fs
 	$(FORTHC) pictured.fs
@@ -49,11 +58,14 @@ obj/vmachine.o: vmachine.s obj
 obj/core.o: core.s obj
 	$(CA65) --cpu 65816 $(CA65FLAGS) $< -l obj/core.lst -o $@
 
+obj/bignum.o: bignum.s obj
+	$(CA65) --cpu 65816 $(CA65FLAGS) $< -l obj/bignum.lst -o $@
+
 obj/pictured.o: pictured.s obj
 	$(CA65) --cpu 65816 $(CA65FLAGS) $< -l obj/pictured.lst -o $@
 
 # Archive into vmachine.lib
-$(SDK_LIB)/vmachine.lib: obj/vmachine.o obj/core.o obj/pictured.o
+$(SDK_LIB)/vmachine.lib: obj/vmachine.o obj/core.o obj/bignum.o obj/pictured.o
 	$(AR65) a $@ $^
 
 obj:
@@ -61,6 +73,7 @@ obj:
 
 clean:
 	-$(RM) core.s core.inc
+	-$(RM) bignum.s bignum.inc
 	-$(RM) pictured.s pictured.inc
 	-$(RM) obj$(SEP)*.o
 	-$(RM) obj$(SEP)*.lst

@@ -8,6 +8,7 @@ SDK_LIB      = ../sdk/lib/vmachine.lib
 all: release
 
 release: obj obj/release bin bin/release \
+	bin/release/bignum-test.bin bin/release/bignum-test.srec \
 	bin/release/control.bin bin/release/control.srec \
 	bin/release/const-expr.bin bin/release/const-expr.srec \
 	bin/release/core-test.bin bin/release/core-test.srec \
@@ -22,6 +23,10 @@ release: obj obj/release bin bin/release \
 	bin/release/string.bin bin/release/string.srec
 
 # All bins now link against SDK library instead of individual .o files
+bin/release/bignum-test.bin: obj/release/bignum-test.o $(SDK_LIB)
+	$(LD65) -C debug.cfg -o $@ -m bin/release/bignum-test.map \
+		obj/release/bignum-test.o $(SDK_LIB)
+
 bin/release/control.bin: obj/release/control.o $(SDK_LIB)
 	$(LD65) -C debug.cfg -o $@ -m bin/release/control.map \
 		obj/release/control.o $(SDK_LIB)
