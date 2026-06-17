@@ -25,6 +25,8 @@ sdk/
 *.lst
 
 # Generated compiler source.
+bignum.inc
+bignum.s
 core.inc
 core.s
 pictured.inc
