@@ -138,13 +138,14 @@ variable bn-b
         bn-rem @
         BN-BASE um*
         rot 0 d+
-        2 pick
-        um/mod
-        over BN-SIZE 1 - i -
-        cells + !
-        bn-rem !
+        3 pick
+        um/mod                      \ ( n a rem quot )
+        2 pick                      \ ( n a rem quot a )
+        BN-SIZE 1 - i -
+        cells + !                   \ store quot, stack: ( n a rem )
+        bn-rem !                    \ stack: ( n a )
     loop
-    2drop                       \ drop both n and a
+    2drop                           \ drop both n and a
     bn-rem @
 ;
 

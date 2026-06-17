@@ -115,6 +115,5 @@ create test-bn2 260 allot
 
 : bignum-main
   phase1-test
-  div-debug
- \ phase2-test
+  phase2-test
 ;

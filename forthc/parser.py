@@ -280,23 +280,43 @@ class Parser:
                     self._peek().value in self._struct_names):
                 struct_ref = self._advance().value
 
-            if self._match(TType.NUMBER):
-                num_tok = self._advance()
-                if self._match(TType.ALLOT):
+            # Try constant expression for allot size
+            if self._match(TType.NUMBER) or (
+                    self._match(TType.WORD) and
+                    self._peek().value in self._known_constants):
+                saved_pos = self._pos
+                val = self._fold_constant_expr()
+                if val is not None and self._match(TType.ALLOT):
                     self._advance()
-                    size = num_tok.value
-                elif self._match(TType.COMMA):
+                    size = val
+                elif val is not None and self._match(TType.COMMA):
                     self._advance()
-                    data.append(DataItem(kind='cell', value=num_tok.value))
+                    data.append(DataItem(kind='cell', value=val))
                     data.extend(self._data_sequence())
-                elif self._match(TType.CCOMMA):
+                elif val is not None and self._match(TType.CCOMMA):
                     self._advance()
-                    data.append(DataItem(kind='byte', value=num_tok.value))
+                    data.append(DataItem(kind='byte', value=val))
                     data.extend(self._data_sequence())
                 else:
-                    raise ParseError(
-                        "Expected 'allot', ',' or 'c,' after number in 'create'",
-                        self._peek())
+                    # restore and try original handling
+                    self._pos = saved_pos
+                    if self._match(TType.NUMBER):
+                        num_tok = self._advance()
+                        if self._match(TType.ALLOT):
+                            self._advance()
+                            size = num_tok.value
+                        elif self._match(TType.COMMA):
+                            self._advance()
+                            data.append(DataItem(kind='cell', value=num_tok.value))
+                            data.extend(self._data_sequence())
+                        elif self._match(TType.CCOMMA):
+                            self._advance()
+                            data.append(DataItem(kind='byte', value=num_tok.value))
+                            data.extend(self._data_sequence())
+                        else:
+                            raise ParseError(
+                                "Expected 'allot', ',' or 'c,' after number in 'create'",
+                                self._peek())
             elif self._match(TType.WORD):
                 lbl_tok = self._advance()
                 if self._match(TType.COMMA):
