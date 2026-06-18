@@ -12,7 +12,8 @@ release: obj obj/release bin bin/release \
 	bin/release/fibonacci.bin bin/release/fibonacci.srec \
 	bin/release/hanoi.bin bin/release/hanoi.srec \
 	bin/release/mandelbrot.bin bin/release/mandelbrot.srec \
-	bin/release/pi.bin bin/release/pi.srec
+	bin/release/pi.bin bin/release/pi.srec \
+	bin/release/pi_machin.bin bin/release/pi_machin.srec
 
 bin/release/%.bin: obj/release/%.o $(SDK_LIB)
 	$(LD65) -C ../tests/debug.cfg -o $@ -m bin/release/$*.map $< $(SDK_LIB)
