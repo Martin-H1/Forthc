@@ -24,6 +24,14 @@ __vmachine_s__ = 1
 MEM16   = $20                       ; accumulator width bit
 IND16   = $10                       ; index register width bit
 
+; Ascii / UTF-8 codes for commonly used unprintable control characters.
+NULL     = $00                     ; null termination character
+BKSP     = $08                     ; backspace
+L_FEED   = $0A                     ; line feed
+C_RETURN = $0D                     ; carriage return
+SPACE    = $20                     ; space
+DEL      = $7F                     ; Delete
+
 ;
 ; Useful macros
 ;
@@ -1158,6 +1166,115 @@ PUBLIC  vm_key
         RTS
 ENDPUBLIC
 
+;------------------------------------------------------------------------------
+; ACCEPT ( addr maxlen -- actual )
+; Read a line from the UART into the buffer at addr, up to maxlen characters.
+; Returns actual character count (not including the terminating CR).
+;
+; Supported control characters:
+;   CR  ($0D) - end of input
+;   BS  ($08) - backspace: erase last character if any
+;   DEL ($7F) - same as BS
+;   All other characters stored if buffer not full, echoed to terminal.
+;------------------------------------------------------------------------------
+PUBLIC  vm_accept
+        ; Stack frame locals (DP points here after TCD):
+        LOC_MAXLEN  = 1             ; maximum character count
+        LOC_BUF     = 3             ; buffer base address
+        LOC_COUNT   = 5             ; current character count
+        LOC_CHAR    = 7             ; last received character
+        LOC_SIZE    = LOC_CHAR + 1  ; = 8 bytes reserved
+        ;   (saved IP  = 9,  pushed by PHY before frame reserved)
+        ;   (saved DP  = 11, pushed by PHD before PHY)
+
+        PHD                         ; Save DP
+        TSC                         ; Reserve stack frame
+        SEC
+        SBC  #LOC_SIZE
+        TCS
+        TCD                         ; DP -> stack frame
+
+        ; Pop arguments from parameter stack using absolute addressing
+        LDA  a:TOS,X                ; maxlen
+        STA  LOC_MAXLEN
+        LDA  a:NOS,X                ; addr
+        STA  LOC_BUF
+        ; Drop both cells from parameter stack
+        TXA
+        CLC
+        ADC  #4
+        TAX
+
+        STZ  LOC_COUNT              ; char count = 0
+
+        ;--------------------------------------------------------------
+        ; Main character receive loop
+        ;--------------------------------------------------------------
+@getchar:
+        JSR  platform_getc          ; Blocking receive; char returned in A
+        STA  LOC_CHAR               ; Save received character
+
+        CMP  #C_RETURN              ; CR -> end of line
+        BEQ  @done
+
+        CMP  #BKSP                  ; BS -> backspace
+        BEQ  @backspace
+        CMP  #DEL                   ; DEL -> backspace
+        BEQ  @backspace
+
+        ; Normal character: store if buffer not full
+        LDA  LOC_COUNT
+        CMP  LOC_MAXLEN             ; count >= maxlen?
+        BCS  @getchar               ; Buffer full, discard char
+
+        ; Store character in buffer at BUF[count]
+        ; Use Y as byte index; IP already saved in frame
+        LDY  LOC_COUNT
+        OFF16MEM
+        LDA  LOC_CHAR
+        STA  (LOC_BUF),Y            ; BUF[count] = char
+        ON16MEM
+
+        JSR  platform_putc          ; Echo character
+
+        INC  LOC_COUNT
+        BRA  @getchar
+
+        ;--------------------------------------------------------------
+        ; Backspace: erase last character if any
+        ;--------------------------------------------------------------
+@backspace:
+        TAY
+        BEQ  @getchar               ; Nothing to delete
+        DEC  LOC_COUNT
+        LDA  #BKSP
+        JSR  platform_putc
+        LDA  #SPACE                 ; Space (erase on terminal)
+        JSR  platform_putc
+        LDA  #BKSP                  ; BS again (reposition cursor)
+        JSR  platform_putc
+        BRA  @getchar
+
+        ;--------------------------------------------------------------
+        ; CR received: echo CR+LF, push count, tear down and return
+        ;--------------------------------------------------------------
+@done:  JSR  vm_cr
+
+@return:
+        LDA  LOC_COUNT              ; actual character count = result
+        DEX                         ; Push result onto parameter stack
+        DEX
+        STA  a:TOS,X
+
+        ; Tear down frame, restore IP and DP
+        TSC
+        CLC
+        ADC  #LOC_SIZE
+        TCS
+        PLD                         ; Restore DP
+        RTS
+ENDPUBLIC
+
 PUBLIC  vm_cputs
         LDA  TOS,X
         INX
@@ -1205,9 +1322,9 @@ PUBLIC  vm_type
 ENDPUBLIC
 
 PUBLIC  vm_cr
-        LDA  #$0D
+        LDA  #C_RETURN
         JSR  platform_putc
-        LDA  #$0A
+        LDA  #L_FEED
         JMP  platform_putc
 ENDPUBLIC
 

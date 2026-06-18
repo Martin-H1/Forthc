@@ -62,6 +62,7 @@ RNOS            = 3
 ; Skipped when assembling vmachine.s itself (which exports them).
 ; ---------------------------------------------------------------------------
 .ifndef __vmachine_s__
+        .import vm_accept
         .import vm_base_addr
         .import vm_clear
         .import vm_star

@@ -194,6 +194,7 @@ _RETURN_STACK_OPS = frozenset({
 
 # Words that require a call to a runtime routine.
 RUNTIME_CALLS: dict[str, str] = {
+    'accept': 'vm_accept',
     'base':   'vm_base_addr',
     'um*':    'vm_umstar',
     'um/mod': 'vm_umslashmod',
