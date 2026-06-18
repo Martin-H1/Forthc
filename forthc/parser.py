@@ -385,7 +385,7 @@ class Parser:
             self._advance()
             # segment name can be a quoted string or a bare word
             seg_tok = self._peek()
-            if seg_tok.type in (TType.SQUOTE, TType.DOTQUOTE, TType.WORD):
+            if seg_tok.type in (TType.SQUOTE, TType.DOTQUOTE, TType.WORD, TType.DQUOTE):
                 self._advance()
                 return SegmentDirective(name=str(seg_tok.value),
                                         line=tok.line, col=tok.col)
