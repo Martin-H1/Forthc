@@ -278,12 +278,20 @@ PUBLIC  vm_umslashmod
 .endif
         ASL  NOS,X                  ; quotient  <<= 1; old bit15 → carry
         ROL  TOS,X                  ; remainder <<= 1; carry → bit0
+        BCS  @forced_sub            ; bit 16 overflow - remainder is >= divisor
         LDA  TOS,X                  ; current remainder
         SEC
         SBC  vm_tmp1                ; remainder - divisor
         BCC  @restore               ; borrow → remainder < divisor, skip
         STA  TOS,X                  ; update remainder
         INC  NOS,X                  ; set quotient LSB
+        BRA  @restore
+@forced_sub:
+        LDA  TOS,X
+        SEC
+        SBC  vm_tmp1
+        STA  TOS,X                  ; subtraction is guaranteed valid here
+        INC  NOS,X
 @restore:
 .ifndef UNROLL
         DEY

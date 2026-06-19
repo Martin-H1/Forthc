@@ -45,6 +45,7 @@
 : umslashmod-test
     1025 0 14 um/mod ." 1025 0 14 um/mod (expect 3 73) = " swap u. u. cr
     1025 0 0  um/mod ." 1025 0 0 um/mod (expect 1025 -1) = " swap u. . cr
+    25194 6 57121 um/mod ." 418410. 57121 um/mod (expect 18563 7) = " swap u. u. cr
 ;
 
 : slashmod-test
