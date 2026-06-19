@@ -1,12 +1,12 @@
-.export bn-zero
-.export bn-small
-.export bn-copy
-.export bn-add
-.export bn-sub
-.export bn-mul
-.export bn-div
-.export bn-print
-.export bn-zero?
+.export 0>bn
+.export s>bn
+.export bn!
+.export bn+
+.export bn-
+.export bn*
+.export bn/rem
+.export bn.
+.export bn0=
 
 .include "core.inc"
 .include "pictured.inc"
@@ -28,10 +28,10 @@ variable bn-rem              \ scratch for bn-div
 ;
 
 \ ---------------------------------------------------------------------------
-\ bn-zero ( a -- )
+\ 0>bn ( a -- )
 \ Set all cells of bignum a to zero.
 \ ---------------------------------------------------------------------------
-: bn-zero ( a -- )
+: 0>bn ( a -- )
     BN-SIZE 0 do
         0 over i cells + !
     loop
@@ -39,19 +39,19 @@ variable bn-rem              \ scratch for bn-div
 ;
 
 \ ---------------------------------------------------------------------------
-\ bn-small ( n a -- )
+\ s>bn ( n a -- )
 \ Set bignum a to single-cell value n.
 \ ---------------------------------------------------------------------------
-: bn-small ( n a -- )
-    dup bn-zero
+: s>bn ( n a -- )
+    dup 0>bn
     !
 ;
 
 \ ---------------------------------------------------------------------------
-\ bn-copy ( src dst -- )
+\ bn! ( src dst -- )
 \ Copy bignum src to dst.
 \ ---------------------------------------------------------------------------
-: bn-copy ( src dst -- )
+: bn! ( src dst -- )
     BN-SIZE 0 do
         over i cells + @
         over i cells + !
@@ -60,13 +60,13 @@ variable bn-rem              \ scratch for bn-div
 ;
 
 \ ---------------------------------------------------------------------------
-\ bn-add ( a b -- )
+\ bn+ ( a b -- )
 \ b += a  in place, with carry propagation.
 \ ---------------------------------------------------------------------------
 variable bn-a
 variable bn-b
 
-: bn-add ( a b -- )
+: bn+ ( a b -- )
     bn-b !
     bn-a !
     0                               \ carry
@@ -82,10 +82,10 @@ variable bn-b
 ;
 
 \ ---------------------------------------------------------------------------
-\ bn-sub ( a b -- )
+\ bn- ( a b -- )
 \ b -= a  in place. Assumes b >= a (no underflow check).
 \ ---------------------------------------------------------------------------
-: bn-sub ( a b -- )
+: bn- ( a b -- )
     bn-b !
     bn-a !
     0                               \ borrow
@@ -107,10 +107,10 @@ variable bn-b
 ;
 
 \ ---------------------------------------------------------------------------
-\ bn-mul ( n a -- )
+\ bn* ( n a -- )
 \ a *= n  in place. n must be small enough that n * BN-BASE fits in 32 bits.
 \ ---------------------------------------------------------------------------
-: bn-mul ( n a -- )
+: bn* ( n a -- )
     0 bn-carry !
     BN-SIZE 0 do
         over                        \ ( n a n )
@@ -125,11 +125,11 @@ variable bn-b
 ;
 
 \ ---------------------------------------------------------------------------
-\ bn-div ( n a -- rem )
+\ bn/rem ( n a -- rem )
 \ a /= n  in place, high to low. Returns remainder.
 \ n must be <= 65535. Quotient per cell must fit in 16 bits (n > BN-BASE/65535).
 \ ---------------------------------------------------------------------------
-: bn-div ( n a -- rem )
+: bn/rem ( n a -- rem )
     0 bn-rem !
     BN-SIZE 0 do
         BN-SIZE 1 - i -
@@ -150,10 +150,10 @@ variable bn-b
 ;
 
 \ ---------------------------------------------------------------------------
-\ bn-zero? ( a -- flag )
+\ bn0= ( a -- flag )
 \ True if all cells of a are zero.
 \ ---------------------------------------------------------------------------
-: bn-zero? ( a -- flag )
+: bn0= ( a -- flag )
     true                            \ assume zero
     BN-SIZE 0 do
         over i cells + @
@@ -166,12 +166,12 @@ variable bn-b
 ;
 
 \ ---------------------------------------------------------------------------
-\ bn-print ( a -- )
+\ bn. ( a -- )
 \ Print 500 decimal digits. Most significant cell first.
 \ First cell printed without leading zeros, rest with leading zeros.
 \ ---------------------------------------------------------------------------
 variable bn-leading
-: bn-print ( a -- )
+: bn. ( a -- )
     false bn-leading !
     BN-SIZE 0 do                    \ changed from BN-SIZE 1 - 0 do
         BN-SIZE 1 - i -
