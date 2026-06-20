@@ -288,6 +288,78 @@ Supported setup body patterns:
 | `create allot` | `n` | `.res n` bytes |
 | `create cells allot` | `n` | `.res n*2` bytes |
 
+## Arbitrary precision arithmetic (`bignum.fs`)
+
+`bignum.fs` provides arbitrary precision unsigned integers stored as arrays
+of cells in base 10000 (4 decimal digits per cell), little-endian (least
+significant cell first). This base makes decimal output straightforward —
+each cell maps directly to 4 printable digits — while keeping all
+intermediate arithmetic within 32-bit double-cell operations supported by
+the VM (`um*`, `um/mod`, `d+`).
+
+### Constants
+
+```forth
+10000  constant BN-BASE      \ base — 4 decimal digits per cell
+125    constant BN-CELLS     \ cells needed for 500 decimal digits
+130    constant BN-SIZE      \ total cells allocated (with margin)
+```
+
+Adjust `BN-CELLS`/`BN-SIZE` to change the maximum precision. Each cell holds
+4 digits, so `BN-CELLS * 4` is the approximate digit capacity.
+
+### Words
+
+| Word | Stack effect | Description |
+|---|---|---|
+| `0>bn` | `( a -- )` | Zero all cells of `a` |
+| `s>bn` | `( n a -- )` | Set `a` to single-cell value `n` |
+| `bn!` | `( src dst -- )` | Copy `src` to `dst` |
+| `bn+` | `( a b -- )` | `b += a`, in place |
+| `bn-` | `( a b -- )` | `b -= a`, in place (assumes `b >= a`) |
+| `bn*` | `( n a -- )` | `a *= n`, in place (`n` is a single-cell multiplier) |
+| `bn/rem` | `( n a -- rem )` | `a /= n`, in place; returns the remainder |
+| `bn0=` | `( a -- flag )` | True if `a` is zero |
+| `bn.` | `( a -- )` | Print `a` as a decimal number |
+
+### Allocating a bignum
+
+```forth
+create my-number BN-SIZE cells allot
+```
+
+Cross-module use of `BN-SIZE`/`BN-BASE` and the `bignum` defining word is not
+yet supported — see Known Limitations. Consuming modules currently redefine
+the constants locally.
+
+### Example: 500 digits of Pi
+
+`examples/pi.fs` computes Pi to 500 decimal digits using Machin's formula:
+
+π = 16·arctan(1/5) − 4·arctan(1/239)
+
+Each arctangent is computed via its Taylor series in fixed-point arbitrary
+precision arithmetic, using `bn*`/`bn/rem` to advance each term and
+`bn+`/`bn-` to accumulate the alternating sum.
+
+Benchmark: 183.89 seconds on a 3.6864 MHz WDC W65C265SXB.
+
+## Known Limitations
+
+- **Cross-module constants** — constants defined in one module are not
+  visible when compiling a separate module; they must be redefined locally.
+- **Cross-module defining words** — `does>`-based defining words from one
+  module cannot be invoked at the top level of another module. Use `create
+  ... allot` directly as a workaround.
+- **Cross-module inlining** — `.inline` only affects calls within the same
+  compilation unit; consuming modules still pay call overhead for inlinable
+  words defined elsewhere.
+- `create NAME <constant-expr> cells allot` inside a word body is not yet
+  supported (`create` is unresolved in that context).
+- `create NAME <bare-number> cells allot` at the top level does not parse
+  correctly when `cells` follows a plain number rather than a named
+  constant.
+
 ---
 
 ## VM instruction set
@@ -504,6 +576,28 @@ z-real @ dup RESCALE */   \ compiles to: multiply then shift right 10 bits
 This is the single largest optimization for fixed-point arithmetic programs.
 Use power-of-two scale factors wherever possible to take advantage of it.
 
+### Lesson: test edge cases, not just typical cases
+
+While building a 500-digit Pi calculator (`examples/pi.fs`) using Machin's
+formula, a subtle bug surfaced in `vm_umslashmod` (`um/mod`) that had passed
+the entire regression suite for months. The bug only appeared when the
+divisor was large enough (≥ 2^15) that the shift-and-subtract division
+loop's partial remainder could transiently need 17 bits before a conditional
+subtraction brought it back under 16 — a case that never occurs with small
+divisors.
+
+The fix detects the carry-out from the partial remainder's left shift: if a
+carry occurs, the true (un-truncated) partial remainder has overflowed 16
+bits and is therefore unconditionally ≥ the divisor, so the subtraction must
+happen regardless of what the truncated 16-bit comparison would say.
+
+The bug was found by cross-checking intermediate values against a GForth
+build of the same algorithm (64-bit cells, so the bug cannot occur there)
+and bisecting down to a single failing `um/mod` call with a specific
+large divisor. This is a useful technique: when porting or verifying
+fixed-width arithmetic, compare against a wide-cell reference implementation
+of the identical algorithm to isolate exactly which operation diverges.
+
 ---
 
 ## Building the SDK
@@ -592,7 +686,7 @@ forthc/
 │   ├── fibonacci.fs        Classic Fibonacci number generator
 │   ├── hanoi.fs            Recursive tower of Hanoi
 │   ├── mandelbrot.fs       Text Mandelbrot set generator
-│   └── pi.fs               Calculate Pi using the Nilakantha infinite series.
+│   └── pi.fs               500 digits of Pi via Machin's formula (bignum.fs)
 ├── tests/
 │   ├── Makefile
 │   ├── debug.cfg           ld65 linker config ($4000 CODE, $00B4 ZP)
