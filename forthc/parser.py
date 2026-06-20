@@ -31,7 +31,7 @@ from .ast_nodes import (
     DefineDirective, ExportDirective, OriginDirective, SegmentDirective,
     MainDirective, Comma, CComma, NumberLit, StringLit, PrintString,
     WordCall, IfThen, BeginUntil, BeginWhileRepeat, DoLoop,
-    IncludeDirective, InlineDirective,
+    IncludeDirective, InlineAsm, InlineDirective,
 )
 
 
@@ -479,6 +479,10 @@ class Parser:
         if tok.type == TType.ALLOT:
             self._advance()
             return WordCall(name='allot', line=tok.line, col=tok.col)
+
+        if tok.type == TType.INLINE_ASM:
+            self._advance()
+            return InlineAsm(text=tok.value, line=tok.line, col=tok.col)
 
         if tok.type == TType.NUMBER:
             self._advance()

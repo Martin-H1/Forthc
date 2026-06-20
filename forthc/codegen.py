@@ -47,7 +47,7 @@ from .ast_nodes import (
     MainDirective, NumberLit, StringLit, PrintString,
     WordCall, IfThen, BeginUntil, BeginWhileRepeat, DoLoop,
     ASTNode, Comma, CComma, DefiningWord, DefiningCall,
-    IncludeDirective, InlineDirective,
+    IncludeDirective, InlineAsm, InlineDirective,
 )
 
 @dataclass
@@ -785,6 +785,11 @@ class CodeGenerator:
         if isinstance(node, NumberLit):
             u16 = _to_u16(node.value)
             self._emit_instr('LIT', f'${u16:04X}', f'push {node.value}')
+        elif isinstance(node, InlineAsm):
+            self._emit('; inline assembly')
+            for line in node.text.splitlines():
+                self._emit(f'        {line}')
+            self._emit('; end inline assembly')
         elif isinstance(node, StringLit):
             lbl = self._fresh_str_label()
             str_pool.append((lbl, node.text))

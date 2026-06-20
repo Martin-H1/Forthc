@@ -6,6 +6,7 @@
 
 : control-test
     ." Control structures test enter" cr
+    asm-test
     0 if-test
     1 if-test
     0 if-else-test
@@ -17,6 +18,22 @@
     leave-test
     recurse-test
     ." Control structures test exit" cr
+;
+
+: fast-add ( a b -- c )
+    [asm]
+    CLC
+    LDA  TOS,X
+    ADC  NOS,X
+    INX
+    INX
+    STA  TOS,X
+    [end-asm]
+;
+
+: asm-test
+    cr ." inline asm test" cr
+    ." 3 4 fast-add (expect 7) = " 3 4 fast-add . cr
 ;
 
 : if-test

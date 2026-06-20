@@ -43,6 +43,7 @@ class TType(Enum):
     EXPORT      = auto()   # .export  (extension: set word public for linker)
     FIELD       = auto()   # .field
     INCLUDE     = auto()   # .include
+    INLINE_ASM  = auto()   # [asm] ... [end-asm] raw assembly payload
     INLINE      = auto()   # .inline
     MAIN        = auto()   # .main    (extension: designate entry-point word)
     ORIGIN      = auto()   # .origin  (extension: set origin address)
@@ -163,6 +164,14 @@ def tokenize(source: str) -> list:
                 advance()
         raise TokenizeError("Unterminated ( comment", start_line, start_col)
 
+    def read_raw_line() -> str:
+        """Read characters up to (not including) the next newline."""
+        buf = []
+        while pos < n and source[pos] != '\n':
+            buf.append(source[pos])
+            advance()
+        return ''.join(buf)
+
     def read_string(intro: str) -> str:
         start_line, start_col = line, col
         buf = []
@@ -228,6 +237,32 @@ def tokenize(source: str) -> list:
             continue
 
         word_lower = word.lower()
+
+        # Inline assembly block - raw capture until a line that is
+        # exactly '[end-asm]' (trimmed). No lowercasing, no tokenizing.
+        if word == '[asm]':
+            start_line, start_col = tok_line, tok_col
+            # skip rest of this line (in case of trailing whitespace/comment)
+            skip_line_comment_remainder = True
+            while pos < n and source[pos] in ' \t\r':
+                advance()
+            if pos < n and source[pos] == '\n':
+                advance()
+            raw_lines = []
+            closed = False
+            while pos < n:
+                raw_line = read_raw_line()
+                if pos < n and source[pos] == '\n':
+                    advance()
+                if raw_line.strip() == '[end-asm]':
+                    closed = True
+                    break
+                raw_lines.append(raw_line)
+            if not closed:
+                raise TokenizeError("Unterminated [asm] block", start_line, start_col)
+            payload = '\n'.join(raw_lines)
+            tokens.append(Token(TType.INLINE_ASM, payload, start_line, start_col))
+            continue
 
         # Check keywords (case-insensitive)
         if word_lower in KEYWORD_MAP:

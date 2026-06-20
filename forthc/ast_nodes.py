@@ -106,6 +106,11 @@ class IncludeDirective(ASTNode):
     filename: str = ''
 
 @dataclass
+class InlineAsm(ASTNode):
+    """[asm] ... [end-asm] — raw assembly passthrough"""
+    text: str = ''
+
+@dataclass
 class InlineDirective(ASTNode):
     """.inline name  — mark word for inline expansion at call sites"""
     word: str = ''
