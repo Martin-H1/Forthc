@@ -1,62 +1,82 @@
-\ Calculate pi using the Nilakantha infinite series. While more complicated
-\ than the Leibniz formula, it is fairly easy to understand, and converges
-\ on pi much more quickly.
-
-\ The formula takes three and alternately adds and subtracts fractions with
-\ a numerator of 4 and denominator that is the product of three consecutive
-\ integers. So each subsequent fraction begins its set of integers with the
-\ highest value used in the previous fraction.
-
-\ Described in C syntax n starts at 2 and iterates to the desired precision.
-\ pi = 3 + 4/((n)*(++n)*(++n)) - 4/((n)*(++n)*(++n)) + ...
-
-\ Here's a three iteration example with an error slightly more than 0.0007.
-\ pi = 3 + 4/(2*3*4) - 4/(4*5*6)
-\        + 4/(6*7*8) - 4/(8*9*10)
-\        + 4/(10*11*12) - 4/(12*13*14)
-\    = 3.14088134088
+\ Calculate Pi using bignums and Machin's formula:
+\ Pi = 16*arctan(1/5) - 4*arctan(1/239)
+\ Which is computable with the arctangent series (Gregory's series):
+\ arctan (x) = (x^1)/1 - (x^3)/3 + (x^5)/5 - (x^7)/7 + .. + -1^n*(x^2n+1)/(2n+1)
 
 .include "core.inc"
+.include "bignum.inc"
 
-.main print_pi
+.main print-pi
 
-\ normally this requires floating point arithmetic, but we're using fixed point
-\ multiplying by a scaling factor and returned as a ratio. We'll use 3 integer
-\ bits and the remainder of the cell for fractional bits.
+500 constant DIGITS
 
-$2000 constant rescale	 \ Rescaling factor
-$6000 constant three	 \ 3 * rescale
-$8000 constant four	 \ 4 * rescale
+10000  constant BN-BASE      \ base - 4 decimal digits per cell
+125    constant BN-CELLS     \ 125 cells * 4 digits = 500 digits
+                             \ +5 extra for carry margin
+130    constant BN-SIZE      \ total cells allocated per bignum
 
-variable n
+.segment "BSS"		\ Place the variables and bignums in the data area
 
-\ calculates (n)*(++n)*(++n)
-: denominator ( -- product )
-  n @ dup 1+ dup 1+ dup n ! * * ;
+variable ar-x           \ x in arctan(1/x)
+variable ar-x2          \ x squared
+variable ar-i           \ current odd term index: 1, 3, 5, 7, ...
+variable ar-sign        \ true = next term subtracts, false = next term adds
 
-\ calculates a single scaled quotient term 
-: quotient ( -- q )
-    four denominator u/ ;
+create pi-result 260 allot
+create scale     260 allot
+create scratch   260 allot
+create scratch2  260 allot
+create sum       260 allot
+create term      260 allot
 
-\ calculates Qn - Qn+1
-: calc_term ( -- q )
-  quotient quotient - ;
+.segment "CODE"
 
-\ Computes pi as a ratio of integers
-: calc_pi ( -- numerator denominator )
-    2 n !
-    three
+: make-scale ( -- )
+    1 scale s>bn
+    DIGITS 0 do
+        10 scale bn*
+    loop
+;
+
+: arctan-recip ( x -- )
+    dup ar-x !
+    dup *
+    ar-x2 !
+    scale term bn!
+    ar-x @ term bn/rem drop
+    term sum bn!
+    1 ar-i !
+    false ar-sign !
     begin
-        calc_term dup 0>
-        n @ 38 u< and
+        ar-x2 @ term bn/rem drop
+        term bn0= 0=
     while
-        +
+        ar-i @ 2 + dup ar-i !
+        term scratch bn!
+        scratch bn/rem drop
+        ar-sign @ if
+            scratch sum bn+
+        else
+            scratch sum bn-
+        then
+        ar-sign @ 0= ar-sign !
     repeat
-    drop
-    rescale ;
+;
 
-: print_pi
-  calc_pi swap
-  cr
-  ." Pi = " . ." / " . cr
-  ." N = " n @ . cr ;
+: calc-pi ( -- )
+    5 arctan-recip
+    sum scratch2 bn!
+    16 scratch2 bn*
+    239 arctan-recip
+    4 sum bn*
+    sum scratch2 bn-
+    scratch2 pi-result bn!
+;
+
+: print-pi ( -- )
+    cr ." Pi to 500 digits:" cr
+    make-scale
+    calc-pi
+    pi-result bn.
+    cr
+;
