@@ -287,7 +287,8 @@ class CodeGenerator:
     _does_words:     set  = field(default_factory=set,  init=False)
     _inline_words:   dict = field(default_factory=dict, init=False)
     _word_nodes:     dict = field(default_factory=dict, init=False)
-    _instructions: list = field(default_factory=list, init=False)
+    _instructions:   list = field(default_factory=list, init=False)
+    _loop_leave_stack: list = field(default_factory=list, init=False)
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -852,6 +853,14 @@ class CodeGenerator:
             self._emit_instr('LIT', sym, f'address of {name}')
             return
 
+        # leave — exit innermost do/loop immediately
+        if name == 'leave':
+            if not self._loop_leave_stack:
+                raise CodeGenError("'leave' used outside a do/loop", node)
+            leave_lbl = self._loop_leave_stack[-1]
+            self._emit_instr('BRANCH', leave_lbl, 'leave: exit loop')
+            return
+
         # recurse — call the current word
         if name == 'recurse':
             if not self._current_word:
@@ -914,17 +923,25 @@ class CodeGenerator:
         self._emit_label(end_lbl)
 
     def _gen_do_loop(self, node: DoLoop, str_pool: list):
-        top_lbl  = self._fresh_label('do')
-        end_lbl  = self._fresh_label('loop')
-        step_fn  = 'vm_plus_loop_step' if node.plus_loop else 'vm_do_loop_step'
+        top_lbl   = self._fresh_label('do')
+        leave_lbl = self._fresh_label('leave')
+        end_lbl   = self._fresh_label('loop')
+        step_fn   = 'vm_plus_loop_step' if node.plus_loop else 'vm_do_loop_step'
+
+        # track the leave target so nested 'leave' statements know where to jump
+        self._loop_leave_stack.append(leave_lbl)
+
         self._emit_instr('TWOTOR', '', 'do: push limit and index to R')
         self._emit_label(top_lbl)
         self._gen_body(node.body, str_pool)
         self._emit_instr('CALL', step_fn, 'loop: increment and test')
         self._emit_instr('ZBRANCH', top_lbl, 'loop: branch if not done')
+        self._emit_label(leave_lbl)
         self._emit_instr('TWORFROM', '', 'loop: discard limit and index from R')
         self._emit_instr('CALL', '_2drop', 'loop: drop limit and index')
         self._emit_label(end_lbl)
+
+        self._loop_leave_stack.pop()
 
     # ------------------------------------------------------------------
     # String label helper

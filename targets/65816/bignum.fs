@@ -159,7 +159,7 @@ variable bn-b
         over i cells + @
         0<> if
             drop false              \ found non-zero cell
-            \ leave
+            leave
         then
     loop
     swap drop

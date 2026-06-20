@@ -14,6 +14,7 @@
     begin-until-test
     begin-while-test
     plusloop-test
+    leave-test
     recurse-test
     ." Control structures test exit" cr
 ;
@@ -77,6 +78,18 @@
     else
         drop 1
     then
+;
+
+: leave-test
+    cr ." leave test" cr
+    10 0 do
+        i 5 = if
+            ." leaving at i=5" cr
+            leave
+        then
+        i .
+    loop
+    cr
 ;
 
 : recurse-test
