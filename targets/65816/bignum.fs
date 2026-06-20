@@ -173,16 +173,16 @@ variable bn-b
 variable bn-leading
 : bn. ( a -- )
     false bn-leading !
-    BN-SIZE 0 do                    \ changed from BN-SIZE 1 - 0 do
+    BN-SIZE 0 do
         BN-SIZE 1 - i -
         cells over +
         @
         bn-leading @ if
-            4 u.r
+            0 <# # # # # #> type        \ zero-padded 4 digits, no trailing space
         else
             dup 0<> if
                 true bn-leading !
-                .
+                0 <# #S #> type          \ no leading zeros, no trailing space
             else
                 drop
             then
@@ -190,6 +190,6 @@ variable bn-leading
     loop
     drop
     bn-leading @ 0= if
-        0 .
+        ." 0"
     then
 ;
