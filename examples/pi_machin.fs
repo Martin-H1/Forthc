@@ -8,7 +8,7 @@
 
 .main print-pi
 
-500 constant DIGITS     \ SCALE = 10^500 as a bignum - need to construct this
+500 constant DIGITS
 
 10000  constant BN-BASE      \ base - 4 decimal digits per cell
 125    constant BN-CELLS     \ 125 cells * 4 digits = 500 digits
@@ -32,9 +32,9 @@ create term      260 allot
 .segment "CODE"
 
 : make-scale ( -- )
-    1 scale bn-small
+    1 scale s>bn
     DIGITS 0 do
-        10 scale bn-mul
+        10 scale bn*
     loop
 ;
 
@@ -42,22 +42,22 @@ create term      260 allot
     dup ar-x !
     dup *
     ar-x2 !
-    scale term bn-copy
-    ar-x @ term bn-div drop
-    term sum bn-copy
+    scale term bn!
+    ar-x @ term bn/rem drop
+    term sum bn!
     1 ar-i !
     false ar-sign !
     begin
-        ar-x2 @ term bn-div drop
-        term bn-zero? 0=
+        ar-x2 @ term bn/rem drop
+        term bn0= 0=
     while
         ar-i @ 2 + dup ar-i !
-        term scratch bn-copy
-        scratch bn-div drop
+        term scratch bn!
+        scratch bn/rem drop
         ar-sign @ if
-            scratch sum bn-add
+            scratch sum bn+
         else
-            scratch sum bn-sub
+            scratch sum bn-
         then
         ar-sign @ 0= ar-sign !
     repeat
@@ -65,26 +65,18 @@ create term      260 allot
 
 : calc-pi ( -- )
     5 arctan-recip
-    sum scratch2 bn-copy
-    16 scratch2 bn-mul
+    sum scratch2 bn!
+    16 scratch2 bn*
     239 arctan-recip
-    4 sum bn-mul
-    sum scratch2 bn-sub
-    scratch2 pi-result bn-copy
-;
-
-: mul16-test
-    5 arctan-recip
-    sum scratch2 bn-copy
-    ." before *16: " scratch2 bn-print cr
-    16 scratch2 bn-mul
-    ." after *16: " scratch2 bn-print cr
+    4 sum bn*
+    sum scratch2 bn-
+    scratch2 pi-result bn!
 ;
 
 : print-pi ( -- )
     cr ." Pi to 500 digits:" cr
     make-scale
     calc-pi
-    pi-result bn-print
+    pi-result bn.
     cr
 ;
