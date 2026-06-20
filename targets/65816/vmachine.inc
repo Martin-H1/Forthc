@@ -57,6 +57,32 @@ PSP5            = CELL_SIZE * 5
 RTOS            = 1
 RNOS            = 3
 
+; Accumulator width helpers
+MEM16           = $20               ; accumulator width bit
+IND16           = $10               ; index register width bit
+
+; Ascii / UTF-8 codes for commonly used unprintable control characters.
+NULL            = $00               ; null termination character
+BKSP            = $08               ; backspace
+L_FEED          = $0A               ; line feed
+C_RETURN        = $0D               ; carriage return
+SPACE           = $20               ; space
+DEL             = $7F               ; Delete
+
+;
+; Useful macros
+;
+.macro ON16MEM
+        REP     #MEM16              ; accumulator = 16-bit
+        .A16
+.endmacro
+
+.macro OFF16MEM
+        SEP     #MEM16              ; accumulator = 8-bit
+        .A8
+.endmacro
+
+
 ; ---------------------------------------------------------------------------
 ; Conditionally import virtual machine runtime functions.
 ; Skipped when assembling vmachine.s itself (which exports them).
@@ -130,7 +156,6 @@ RNOS            = 3
         .import vm_ccomma
         .import vm_count
         .import vm_move
-        .import vm_fill
         .import vm_sp_shadow
         .import vm_here_ptr
         .import vm_hld_addr

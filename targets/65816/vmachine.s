@@ -20,31 +20,6 @@ __vmachine_s__ = 1
 .I16
 .include "vmachine.inc"
 
-; Accumulator width helpers
-MEM16   = $20                       ; accumulator width bit
-IND16   = $10                       ; index register width bit
-
-; Ascii / UTF-8 codes for commonly used unprintable control characters.
-NULL     = $00                     ; null termination character
-BKSP     = $08                     ; backspace
-L_FEED   = $0A                     ; line feed
-C_RETURN = $0D                     ; carriage return
-SPACE    = $20                     ; space
-DEL      = $7F                     ; Delete
-
-;
-; Useful macros
-;
-.macro ON16MEM
-        REP     #MEM16              ; accumulator = 16-bit
-        .A16
-.endmacro
-
-.macro OFF16MEM
-        SEP     #MEM16              ; accumulator = 8-bit
-        .A8
-.endmacro
-
 ;------------------------------------------------------------------------------
 ; PUBLIC / ENDPUBLIC - Export a subroutine as a global symbol
 ;
@@ -1633,35 +1608,6 @@ PUBLIC  vm_move
         BRA  @loop
 @done:
         PLA                         ; Drop stack locals
-        PLA
-        RTS
-ENDPUBLIC
-
-PUBLIC  vm_fill
-        LOC_DSTPTR = 1
-        LOC_BYTE = 3
-        LDA  TOS,X                  ; pop fill byte to LOC_BYTE
-        INX
-        INX
-        PHA
-        LDY  TOS,X                  ; pop u (byte count) to Y
-        INX
-        INX
-        LDA  TOS,X                  ; pop addr to LOC_DTSPTR
-        INX
-        INX
-        PHA
-        TYA                         ; Test for zero count = no-op
-        BEQ  @done
-        DEY                         ; Change count to an index
-@loop:
-        OFF16MEM
-        LDA  LOC_BYTE,S
-        STA  (LOC_DSTPTR,S),Y
-        ON16MEM
-        DEY
-        BPL  @loop
-@done:  PLA                         ; Drop stack locals
         PLA
         RTS
 ENDPUBLIC

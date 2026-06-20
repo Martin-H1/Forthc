@@ -234,7 +234,6 @@ RUNTIME_CALLS: dict[str, str] = {
     'c,':     'vm_ccomma',
     'count':  'vm_count',
     'move':   'vm_move',
-    'fill':   'vm_fill',
     'depth':  'vm_depth',
     '.s':     'vm_dots',
     'tuck':   'vm_tuck',

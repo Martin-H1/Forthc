@@ -20,6 +20,7 @@
 .export cells
 .export cell+
 .export erase
+.export fill
 .export 2drop
 .export max
 .export min
@@ -375,6 +376,41 @@ $FFFF constant uint_max
     CELL_SIZE +
 ;
 .inline cell+
+
+\ ---------------------------------------------------------------------------
+\ fill ( addr u byte -- )
+\ Fill u bytes starting at addr with byte.
+\ ---------------------------------------------------------------------------
+: fill ( addr u byte -- )
+    [asm]
+    LOC_DSTPTR = 1
+    LOC_BYTE = 3
+    LDA  TOS,X                  ; pop fill byte to LOC_BYTE
+    INX
+    INX
+    PHA
+    LDY  TOS,X                  ; pop u (byte count) to Y
+    INX
+    INX
+    LDA  TOS,X                  ; pop addr to LOC_DTSPTR
+    INX
+    INX
+    PHA
+    TYA                         ; Test for zero count = no-op
+    BEQ  @done
+    DEY                         ; Change count to an index
+@loop:
+    OFF16MEM
+    LDA  LOC_BYTE,S
+    STA  (LOC_DSTPTR,S),Y
+    ON16MEM
+    DEY
+    BPL  @loop
+@done:
+    PLA                         ; Drop stack locals
+    PLA
+    [end-asm]
+;
 
 \------------------------------------------------------------------------------
 \ ERASE ( addr u -- ) fill u bytes starting at addr with zero
