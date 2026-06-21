@@ -1,5 +1,7 @@
 \ string.fs - text regression tests
 
+.include "core.inc"
+
 .main string-test
 
 \ A string.f test file covering s", .", type, count

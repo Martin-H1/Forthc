@@ -154,8 +154,6 @@ DEL             = $7F               ; Delete
         .import vm_here
         .import vm_comma
         .import vm_ccomma
-        .import vm_count
-        .import vm_move
         .import vm_sp_shadow
         .import vm_here_ptr
         .import vm_hld_addr

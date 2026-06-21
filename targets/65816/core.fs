@@ -19,6 +19,8 @@
 .export cell
 .export cells
 .export cell+
+.export count
+.export move
 .export erase
 .export fill
 .export 2drop
@@ -376,6 +378,63 @@ $FFFF constant uint_max
     CELL_SIZE +
 ;
 .inline cell+
+
+\ ---------------------------------------------------------------------------
+\ count ( c-addr1 -- c-addr2 u )
+\ c-addr1 is the address of a count byte followed by a string. c-addr2 is the
+\ address of the first character after c-addr1. u is the length in characters
+\ of the string at c-addr2.
+\ ---------------------------------------------------------------------------
+: count
+    [asm]
+    LDY  TOS,X                  ; c-addr
+    SEP  #$20
+    LDA  0,Y                    ; length byte (8-bit)
+    REP  #$20
+    INY
+    STY  TOS,X                  ; addr+1 (NOS)
+    DEX
+    DEX
+    ; A holds length byte, but junk in high byte.
+    AND  #$00FF                 ; mask off junk.
+    STA  TOS,X                  ; len (TOS)
+    [end-asm]
+;
+
+\ ---------------------------------------------------------------------------
+\ move ( src dst u -- )
+\ Fill u bytes starting at addr with byte.
+\ ---------------------------------------------------------------------------
+: move
+    [asm]
+    SRCPTR = 1
+    DSTPTR = 3
+    LDY  TOS,X                  ; u
+    INX
+    INX
+    LDA  TOS,X                  ; dst
+    INX
+    INX
+    PHA
+    LDA  TOS,X                  ; src
+    INX
+    INX
+    PHA
+    DEY                         ; Change count to an index
+@loop:
+    CPY  #0
+    BMI  @done                  ; loop terminates at -1 to copy 0 byte.
+    OFF16MEM
+    LDA  (SRCPTR,S),Y
+    STA  (DSTPTR,S),Y
+    ON16MEM
+    DEY
+    BRA  @loop
+@done:
+    PLA                         ; Drop stack locals
+    PLA
+    [end-asm]
+;
 
 \ ---------------------------------------------------------------------------
 \ fill ( addr u byte -- )
