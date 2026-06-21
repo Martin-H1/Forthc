@@ -11,10 +11,11 @@
 .include "core.inc"
 .include "pictured.inc"
 
-10000  constant BN-BASE      \ base - 4 decimal digits per cell
-125    constant BN-CELLS     \ 125 cells * 4 digits = 500 digits
+cell 2 * constant BN-DIGITS  \ decimal digits per cell
+10000    constant BN-BASE    \ base - 4 decimal digits per cell
+125      constant BN-CELLS   \ 125 cells * 4 digits = 500 digits
                              \ +5 extra for carry margin
-130    constant BN-SIZE      \ total cells allocated per bignum
+130      constant BN-SIZE    \ total cells allocated per bignum
 
 variable bn-carry            \ scratch for bn-mul
 variable bn-rem              \ scratch for bn-div
@@ -170,22 +171,39 @@ variable bn-b
 \ Print 500 decimal digits. Most significant cell first.
 \ First cell printed without leading zeros, rest with leading zeros.
 \ ---------------------------------------------------------------------------
+variable bn-row-cnt
+variable bn-total
 variable bn-leading
 : bn. ( a -- )
+    0 bn-row-cnt !
+    0 bn-total !
     false bn-leading !
     BN-SIZE 0 do
         BN-SIZE 1 - i -
         cells over +
         @
         bn-leading @ if
-            0 <# # # # # #> type        \ zero-padded 4 digits, no trailing space
+            \ 0-padded BN-DIGITS digits, no trailing space
+            0 <# BN-DIGITS 0 do # loop #> type
+            BN-DIGITS bn-row-cnt +!
+            BN-DIGITS bn-total +!
         else
             dup 0<> if
+                1 bn-row-cnt +!
+                1 bn-total +!
                 true bn-leading !
-                0 <# #S #> type          \ no leading zeros, no trailing space
+                space space 0 <# #S #> type ." ." cr
+                bn-total @ 4 u.r ." :" space
             else
-                drop
+                drop space
             then
+        then
+        bn-leading @
+        bn-row-cnt @ 63 >
+        and
+        if
+            cr bn-total @ 4 u.r ." :" space
+            0 bn-row-cnt !
         then
     loop
     drop
